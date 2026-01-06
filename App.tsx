@@ -27,6 +27,7 @@ import Shipping from './pages/Shipping';
 import SizeGuide from './pages/SizeGuide';
 import Privacy from './pages/Privacy';
 import Gifts from './pages/Gifts';
+import EmailConfirmed from './pages/EmailConfirmed';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -103,6 +104,7 @@ function App() {
                           <Route path="/guia-de-medidas" element={<SizeGuide />} />
                           <Route path="/presentes" element={<Gifts />} />
                           <Route path="/privacidade" element={<Privacy />} />
+                          <Route path="/confirmado" element={<EmailConfirmed />} />
                           <Route path="*" element={<Navigate to="/" replace />} />
                         </Routes>
                       </main>

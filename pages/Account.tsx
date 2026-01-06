@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
-import { LogOut, Package, Heart, Settings, User as UserIcon, MapPin, CreditCard, ChevronRight, Trash2, ShoppingBag, Shield } from 'lucide-react';
+import { LogOut, Package, Heart, Settings, User as UserIcon, MapPin, CreditCard, ChevronRight, Trash2, ShoppingBag, Shield, Clock, CheckCircle, Truck, XCircle } from 'lucide-react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { User, UserPreferences } from '../types';
+import { User, UserPreferences, Order } from '../types';
 import { useGenderedLanguage } from '../hooks/useGenderedLanguage';
+import { getUserOrders } from '../services/supabase';
 
 const Account = () => {
   const { user, logout, updateProfile, isAdmin } = useAuth();
@@ -15,6 +16,25 @@ const Account = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'orders';
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+
+  useEffect(() => {
+    if (user && activeTab === 'orders') {
+      const fetchOrders = async () => {
+        setIsLoadingOrders(true);
+        try {
+          const data = await getUserOrders(user.id);
+          setOrders(data as any);
+        } catch (error) {
+          console.error('Error fetching orders:', error);
+        } finally {
+          setIsLoadingOrders(false);
+        }
+      };
+      fetchOrders();
+    }
+  }, [user, activeTab]);
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
@@ -80,7 +100,7 @@ const Account = () => {
 
           {/* Content */}
           <div className="lg:col-span-3">
-            {activeTab === 'orders' && <OrdersContent navigate={navigate} />}
+            {activeTab === 'orders' && <OrdersContent navigate={navigate} orders={orders} isLoading={isLoadingOrders} />}
             {activeTab === 'wishlist' && <WishlistContent wishlist={wishlist} removeFromWishlist={removeFromWishlist} navigate={navigate} />}
             {activeTab === 'data' && <UserDataForm user={user} updateProfile={updateProfile} />}
             {activeTab === 'preferences' && <PreferencesForm user={user} updateProfile={updateProfile} />}
@@ -93,21 +113,95 @@ const Account = () => {
 
 /* --- Sub-components --- */
 
-const OrdersContent = ({ navigate }: { navigate: any }) => (
-  <div className="bg-gray-50 p-12 text-center border border-gray-100">
-    <Package size={48} className="mx-auto text-navy/10 mb-8" />
-    <h3 className="text-2xl font-serif text-navy mb-4 italic">Nenhum pedido recente</h3>
-    <p className="text-gray-400 text-sm font-light max-w-sm mx-auto mb-10">
-      Suas encomendas futuras aparecerão aqui assim que forem processadas em nosso ateliê.
-    </p>
-    <button
-      onClick={() => navigate('/colecoes')}
-      className="bg-navy text-white px-10 py-4 text-[11px] tracking-[0.3em] font-bold uppercase hover:bg-navy/90 transition-all"
-    >
-      Explorar Maison
-    </button>
-  </div>
-);
+const OrdersContent = ({ navigate, orders, isLoading }: { navigate: any, orders: Order[], isLoading: boolean }) => {
+  if (isLoading) {
+    return (
+      <div className="py-20 text-center">
+        <div className="w-12 h-12 border-4 border-navy/10 border-t-navy rounded-full animate-spin mx-auto mb-6"></div>
+        <p className="text-navy/40 text-[10px] tracking-[0.5em] uppercase font-bold">Buscando Pedidos...</p>
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="bg-gray-50 p-12 text-center border border-gray-100">
+        <Package size={48} className="mx-auto text-navy/10 mb-8" />
+        <h3 className="text-2xl font-serif text-navy mb-4 italic">Nenhum pedido recente</h3>
+        <p className="text-gray-400 text-sm font-light max-w-sm mx-auto mb-10">
+          Suas encomendas futuras aparecerão aqui assim que forem processadas em nosso ateliê.
+        </p>
+        <button
+          onClick={() => navigate('/colecoes')}
+          className="bg-navy text-white px-10 py-4 text-[11px] tracking-[0.3em] font-bold uppercase hover:bg-navy/90 transition-all"
+        >
+          Explorar Maison
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {orders.map((order) => (
+        <div key={order.id} className="border border-gray-100 bg-white shadow-sm overflow-hidden">
+          <div className="bg-gray-50 px-8 py-4 flex flex-wrap justify-between items-center border-b border-gray-100 gap-4">
+            <div className="flex space-x-8">
+              <div>
+                <p className="text-[8px] tracking-[0.3em] uppercase text-gray-400 font-bold mb-1">Pedido</p>
+                <p className="text-[10px] tracking-wider text-navy font-bold font-mono">#{order.id.slice(0, 8).toUpperCase()}</p>
+              </div>
+              <div>
+                <p className="text-[8px] tracking-[0.3em] uppercase text-gray-400 font-bold mb-1">Data</p>
+                <p className="text-[10px] tracking-wider text-navy font-bold">{new Date(order.createdAt).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <p className="text-[8px] tracking-[0.3em] uppercase text-gray-400 font-bold mb-1">Total</p>
+                <p className="text-[10px] tracking-wider text-navy font-bold">R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              </div>
+            </div>
+            <div className="bg-white px-4 py-2 border border-blue-100 rounded-full">
+              <div className="flex items-center space-x-2">
+                {order.status === 'pending' && <Clock size={12} className="text-amber-500" />}
+                {order.status === 'processing' && <Package size={12} className="text-blue-500" />}
+                {order.status === 'shipped' && <Truck size={12} className="text-blue-500" />}
+                {order.status === 'delivered' && <CheckCircle size={12} className="text-green-500" />}
+                {order.status === 'cancelled' && <XCircle size={12} className="text-red-500" />}
+                <span className="text-[10px] tracking-[0.2em] font-bold uppercase text-navy">
+                  {order.status === 'pending' && 'Pagamento Pendente'}
+                  {order.status === 'processing' && 'Em Produção'}
+                  {order.status === 'shipped' && 'Enviado'}
+                  {order.status === 'delivered' && 'Entregue'}
+                  {order.status === 'cancelled' && 'Cancelado'}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="p-8">
+            <div className="space-y-6">
+              {order.items.map((item, idx) => (
+                <div key={idx} className="flex items-center space-x-6">
+                  <div className="w-16 h-20 bg-gray-50 flex-shrink-0">
+                    {/* Simplified item display without image for now as it's not in OrderItem type */}
+                    <div className="w-full h-full flex items-center justify-center text-navy/20">
+                      <ShoppingBag size={24} />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-serif text-navy font-bold">{item.productName}</h4>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">
+                      Tam: {item.size} • Cor: {item.color} • Qtd: {item.quantity}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const WishlistContent = ({ wishlist, removeFromWishlist, navigate }: { wishlist: any[], removeFromWishlist: any, navigate: any }) => (
   <div>

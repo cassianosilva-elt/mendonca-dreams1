@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useProducts } from '../context/ProductContext';
 import { useCart } from '../context/CartContext';
-import { ChevronRight, ShieldCheck, Truck, RotateCcw, Heart } from 'lucide-react';
+import { ChevronRight, ShieldCheck, Truck, RotateCcw, Heart, AlertCircle } from 'lucide-react';
 import ReviewSection from '../components/ReviewSection';
 import ProductCard from '../components/ProductCard';
 import SEO from '../components/SEO';
 import OptimizedImage from '../components/OptimizedImage';
 import { useWishlist } from '../context/WishlistContext';
+import { getProductInventory } from '../services/supabase';
+import { ProductInventory } from '../types';
 
 const ProductDetail: React.FC = () => {
   const { slug } = useParams();
@@ -20,14 +22,33 @@ const ProductDetail: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [activeTab, setActiveTab] = useState('details');
+  const [inventory, setInventory] = useState<ProductInventory[]>([]);
 
   useEffect(() => {
     if (product) {
       setSelectedSize(product.sizes[0]);
       setSelectedColor(product.colors[0].name);
       window.scrollTo(0, 0);
+
+      const fetchInventory = async () => {
+        try {
+          const data = await getProductInventory(product.id);
+          setInventory(data as any);
+        } catch (error) {
+          console.error('Error fetching inventory:', error);
+        }
+      };
+      fetchInventory();
     }
   }, [product, slug]);
+
+  const checkStock = (size: string, color: string) => {
+    if (inventory.length === 0) return true; // Assume in stock if inventory not loaded or in mock mode
+    const item = inventory.find(i => i.size === size && i.colorName === color);
+    return item ? item.quantity > 0 : false;
+  };
+
+  const isCurrentVariantInStock = checkStock(selectedSize, selectedColor);
 
   if (!product) return <div className="py-40 text-center font-serif text-navy">Produto não encontrado na Maison.</div>;
 
@@ -85,17 +106,23 @@ const ProductDetail: React.FC = () => {
             <p className="text-gray-500 font-light leading-relaxed mb-10 text-lg">{product.description}</p>
 
             <div className="mb-8">
-              <p className="text-[10px] tracking-[0.3em] uppercase font-bold text-navy mb-4">Cor: {selectedColor}</p>
+              <p className="text-[10px] tracking-[0.3em] uppercase font-bold text-navy mb-4 flex justify-between">
+                <span>Cor: {selectedColor}</span>
+              </p>
               <div className="flex space-x-3">
-                {product.colors.map(color => (
-                  <button
-                    key={color.name}
-                    onClick={() => setSelectedColor(color.name)}
-                    className={`w-8 h-8 rounded-full border transition-all ${selectedColor === color.name ? 'border-navy scale-110' : 'border-transparent'}`}
-                    style={{ backgroundColor: color.hex }}
-                    title={color.name}
-                  />
-                ))}
+                {product.colors.map(color => {
+                  const hasStockInAtLeastOneSize = product.sizes.some(size => checkStock(size, color.name));
+                  return (
+                    <button
+                      key={color.name}
+                      onClick={() => setSelectedColor(color.name)}
+                      disabled={!hasStockInAtLeastOneSize}
+                      className={`w-8 h-8 rounded-full border transition-all ${selectedColor === color.name ? 'border-navy scale-110' : 'border-transparent'} ${!hasStockInAtLeastOneSize ? 'opacity-20 cursor-not-allowed grayscale' : ''}`}
+                      style={{ backgroundColor: color.hex }}
+                      title={hasStockInAtLeastOneSize ? color.name : `${color.name} - Indisponível`}
+                    />
+                  );
+                })}
               </div>
             </div>
 
@@ -105,25 +132,38 @@ const ProductDetail: React.FC = () => {
                 <button className="text-[10px] tracking-[0.2em] underline text-navy/40 uppercase hover:text-navy transition">Guia de Medidas</button>
               </div>
               <div className="flex flex-wrap gap-3">
-                {product.sizes.map(size => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`px-6 py-3 text-[11px] font-bold border transition-all ${selectedSize === size ? 'bg-navy text-white border-navy' : 'bg-transparent text-navy border-gray-100 hover:border-navy'}`}
-                  >
-                    {size}
-                  </button>
-                ))}
+                {product.sizes.map(size => {
+                  const isAvailable = checkStock(size, selectedColor);
+                  return (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      disabled={!isAvailable}
+                      className={`px-6 py-3 text-[11px] font-bold border transition-all ${selectedSize === size ? 'bg-navy text-white border-navy' : 'bg-transparent text-navy border-gray-100 hover:border-navy'} ${!isAvailable ? 'opacity-30 cursor-not-allowed line-through' : ''}`}
+                    >
+                      {size}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             <div className="flex flex-col space-y-4 mb-16">
+              {!isCurrentVariantInStock && (
+                <div className="bg-red-50 p-4 border border-red-100 flex items-center space-x-3 mb-4 animate-in fade-in slide-in-from-top-2">
+                  <AlertCircle size={18} className="text-red-500" />
+                  <p className="text-[10px] tracking-widest font-bold uppercase text-red-500">
+                    Infelizmente este tamanho e cor estão temporariamente indisponíveis.
+                  </p>
+                </div>
+              )}
               <div className="flex space-x-4">
                 <button
                   onClick={() => addToCart(product, selectedSize, selectedColor)}
-                  className="flex-1 bg-navy text-white py-5 text-[11px] tracking-[0.3em] font-bold uppercase hover:bg-navy/90 transition-all shadow-xl"
+                  disabled={!isCurrentVariantInStock}
+                  className="flex-1 bg-navy text-white py-5 text-[11px] tracking-[0.3em] font-bold uppercase hover:bg-navy/90 transition-all shadow-xl disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none"
                 >
-                  Adicionar à Sacola
+                  {isCurrentVariantInStock ? 'Adicionar à Sacola' : 'Peça Indisponível'}
                 </button>
                 <button
                   onClick={() => toggleWishlist(product)}
@@ -134,8 +174,14 @@ const ProductDetail: React.FC = () => {
               </div>
               <Link
                 to="/checkout"
-                onClick={() => addToCart(product, selectedSize, selectedColor)}
-                className="w-full bg-transparent border border-navy text-navy py-5 text-[11px] tracking-[0.3em] font-bold uppercase text-center hover:bg-navy hover:text-white transition-all"
+                onClick={(e) => {
+                  if (!isCurrentVariantInStock) {
+                    e.preventDefault();
+                    return;
+                  }
+                  addToCart(product, selectedSize, selectedColor);
+                }}
+                className={`w-full bg-transparent border border-navy text-navy py-5 text-[11px] tracking-[0.3em] font-bold uppercase text-center hover:bg-navy hover:text-white transition-all ${!isCurrentVariantInStock ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 Comprar Agora
               </Link>

@@ -187,6 +187,82 @@ export interface Database {
                 }
                 Update: Partial<Database['public']['Tables']['order_items']['Insert']>
             }
+            reviews: {
+                Row: {
+                    id: string
+                    product_id: string
+                    user_id: string
+                    user_name: string
+                    rating: number
+                    comment: string
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    product_id: string
+                    user_id: string
+                    user_name: string
+                    rating: number
+                    comment: string
+                    created_at?: string
+                }
+                Update: Partial<Database['public']['Tables']['reviews']['Insert']>
+            }
         }
     }
 }
+
+// Service Functions
+export const getUserOrders = async (userId: string) => {
+    if (IS_MOCK_MODE) return [];
+
+    const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select(`
+            *,
+            order_items (*)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+    if (ordersError) throw ordersError;
+    return orders;
+};
+
+export const getProductInventory = async (productId: string) => {
+    if (IS_MOCK_MODE) return [];
+
+    const { data, error } = await supabase
+        .from('inventory')
+        .select('*')
+        .eq('product_id', productId);
+
+    if (error) throw error;
+    return data;
+};
+
+export const getProductReviews = async (productId: string) => {
+    if (IS_MOCK_MODE) return [];
+
+    const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('product_id', productId)
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+};
+
+export const addReview = async (review: Database['public']['Tables']['reviews']['Insert']) => {
+    if (IS_MOCK_MODE) return null;
+
+    const { data, error } = await supabase
+        .from('reviews')
+        .insert(review)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+};

@@ -381,17 +381,19 @@ export const getInventory = async (): Promise<ProductInventory[]> => {
     if (IS_MOCK_MODE) return MOCK_INVENTORY;
 
     try {
-        const { data, error } = await supabase
-            .from('inventory')
-            .select(`
-        *,
-        products:product_id (name)
-      `)
-            .order('updated_at', { ascending: false });
+        const [products, { data: inventoryData, error: invError }] = await Promise.all([
+            getProducts(),
+            supabase
+                .from('inventory')
+                .select(`
+                    *,
+                    products:product_id (id, name)
+                `)
+        ]);
 
-        if (error) throw error;
+        if (invError) throw invError;
 
-        return data?.map(item => ({
+        const inventory = inventoryData?.map(item => ({
             id: item.id,
             productId: item.product_id,
             productName: (item.products as any)?.name || 'Produto',
@@ -400,9 +402,127 @@ export const getInventory = async (): Promise<ProductInventory[]> => {
             quantity: item.quantity,
             updatedAt: item.updated_at,
         })) || [];
+
+        // Create a map for quick lookup: productId-color-size
+        const inventoryMap = new Map();
+        inventory.forEach(item => {
+            inventoryMap.set(`${item.productId}-${item.colorName}-${item.size}`, item);
+        });
+
+        const allItems: ProductInventory[] = [];
+
+        // For each product, check all combinations
+        products.forEach(product => {
+            product.colors.forEach(color => {
+                product.sizes.forEach(size => {
+                    const key = `${product.id}-${color.name}-${size}`;
+                    const existing = inventoryMap.get(key);
+
+                    if (existing) {
+                        allItems.push(existing);
+                    } else {
+                        // Check if a product with same name/color/size exists in DB
+                        // handles cases where sync changed the ID but inventory is there
+                        const dbMatch = inventory.find(i =>
+                            i.productName === product.name &&
+                            i.colorName === color.name &&
+                            i.size === size
+                        );
+
+                        if (dbMatch) {
+                            allItems.push(dbMatch);
+                        } else {
+                            allItems.push({
+                                id: `temp-${product.id}-${color.name}-${size}`,
+                                productId: product.id,
+                                productName: product.name,
+                                colorName: color.name,
+                                size: size,
+                                quantity: 0,
+                                updatedAt: new Date().toISOString()
+                            });
+                        }
+                    }
+                });
+            });
+        });
+
+        return allItems.sort((a, b) => {
+            if (a.productName !== b.productName) {
+                return a.productName.localeCompare(b.productName);
+            }
+            return a.size.localeCompare(b.size);
+        });
     } catch (error) {
         console.error('Error fetching inventory:', error);
         return [];
+    }
+};
+
+export const saveInventoryItem = async (
+    item: ProductInventory,
+    quantity: number
+): Promise<boolean> => {
+    if (IS_MOCK_MODE) {
+        console.warn('Cannot update inventory in mock mode');
+        return false;
+    }
+
+    try {
+        const { error } = await supabase
+            .from('inventory')
+            .upsert({
+                product_id: item.productId,
+                color_name: item.colorName,
+                size: item.size,
+                quantity: quantity,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'product_id,color_name,size' });
+
+        if (error) {
+            if (error.code === '23503') { // Foreign key error
+                const genericProduct = PRODUCTS.find(p => p.id === item.productId);
+                if (genericProduct) {
+                    const { data: newProd, error: prodError } = await supabase
+                        .from('products')
+                        .insert({
+                            slug: genericProduct.slug,
+                            name: genericProduct.name,
+                            category: genericProduct.category,
+                            price: genericProduct.price,
+                            images: genericProduct.images,
+                            description: genericProduct.description,
+                            details: genericProduct.details,
+                            composition: genericProduct.composition,
+                            sizes: genericProduct.sizes,
+                            colors: genericProduct.colors
+                        })
+                        .select()
+                        .single();
+
+                    if (prodError) throw prodError;
+
+                    const { error: retryError } = await supabase
+                        .from('inventory')
+                        .upsert({
+                            product_id: newProd.id,
+                            color_name: item.colorName,
+                            size: item.size,
+                            quantity: quantity,
+                            updated_at: new Date().toISOString()
+                        }, { onConflict: 'product_id,color_name,size' });
+
+                    if (retryError) throw retryError;
+                    return true;
+                }
+            }
+            throw error;
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Error saving inventory:', error);
+        return false;
     }
 };
 

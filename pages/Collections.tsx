@@ -1,17 +1,28 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useProducts } from '../context/ProductContext';
 import { CATEGORIES } from '../constants';
 import ProductCard from '../components/ProductCard';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, X } from 'lucide-react';
 
 const Collections = () => {
   const { products } = useProducts();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const searchQuery = searchParams.get('search') || '';
 
-  const filteredProducts = selectedCategory === 'Todos'
-    ? products
-    : products.filter(p => p.category === selectedCategory);
+  const filteredProducts = products.filter(p => {
+    const matchesCategory = selectedCategory === 'Todos' || p.category === selectedCategory;
+    const matchesSearch = !searchQuery ||
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const clearSearch = () => {
+    setSearchParams({});
+  };
 
   return (
     <div className="pt-40 pb-20 bg-white min-h-screen">
@@ -28,6 +39,14 @@ const Collections = () => {
           <div className="flex items-center space-x-4 text-navy">
             <SlidersHorizontal size={18} />
             <span className="text-[10px] tracking-[0.3em] font-bold uppercase">Filtrar por</span>
+            {searchQuery && (
+              <div className="flex items-center bg-navy/5 px-4 py-2 border border-navy/10 ml-4 animate-in fade-in slide-in-from-left-4">
+                <span className="text-[9px] tracking-widest font-bold uppercase text-navy">Busca: <span className="italic">"{searchQuery}"</span></span>
+                <button onClick={clearSearch} className="ml-3 hover:text-red-500 transition-colors">
+                  <X size={12} />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap justify-center gap-8">
