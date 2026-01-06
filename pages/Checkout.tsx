@@ -3,13 +3,16 @@ import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { createOrder } from '../services/checkout';
-import { ShieldCheck, CreditCard, Landmark, Lock, AlertCircle } from 'lucide-react';
+import { ShieldCheck, CreditCard, Landmark, Lock, AlertCircle, Gift } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useGenderedLanguage } from '../hooks/useGenderedLanguage';
 
 const WHATSAPP_NUMBER = '5511960235151'; // Substitua pelo seu número
 
 const Checkout = () => {
   const { cart, total, clearCart } = useCart();
   const { user } = useAuth();
+  const { translate } = useGenderedLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +34,9 @@ const Checkout = () => {
     name: user?.name || '',
     email: user?.email || '',
   });
+
+  const [isGift, setIsGift] = useState(false);
+  const [giftMessage, setGiftMessage] = useState('');
 
   React.useEffect(() => {
     if (user?.address) {
@@ -78,7 +84,12 @@ const Checkout = () => {
     const orderSummary = cart.map(item => `- ${item.name} (${item.selectedSize}, ${item.selectedColor}) x${item.quantity}: R$ ${item.price.toLocaleString('pt-BR')}`).join('%0A');
     const totalStr = total.toLocaleString('pt-BR');
     const fullAddress = `${shippingAddress.street}, ${shippingAddress.number}${shippingAddress.complement ? ` - ${shippingAddress.complement}` : ''}, ${shippingAddress.neighborhood}, ${shippingAddress.city} - ${shippingAddress.state}, ${shippingAddress.zipCode}`;
-    const message = `Olá! Gostaria de finalizar o meu pedido na Mendonça Dreams:%0A%0A*Itens:*%0A${orderSummary}%0A%0A*Total:* R$ ${totalStr}%0A%0A*Endereço de Entrega:*%0A${fullAddress}%0A%0A*Cliente:* ${formData.name}%0A*E-mail:* ${formData.email}`;
+
+    let message = `Olá! Gostaria de finalizar o meu pedido na Mendonça Dreams:%0A%0A*Itens:*%0A${orderSummary}%0A%0A*Total:* R$ ${totalStr}%0A%0A*Endereço de Entrega:*%0A${fullAddress}%0A%0A*Cliente:* ${formData.name}%0A*E-mail:* ${formData.email}`;
+
+    if (isGift) {
+      message += `%0A%0A*OPÇÃO DE PRESENTE:*%0A- Embalagem Especial: Sim%0A- Mensagem: ${giftMessage || 'Sem mensagem'}`;
+    }
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
 
@@ -113,7 +124,7 @@ const Checkout = () => {
           </div>
           <h1 className="text-4xl font-serif text-navy mb-6">Pedido Confirmado</h1>
           <p className="text-gray-500 mb-10 leading-relaxed">
-            Obrigada, {formData.name}. Seu pedido foi recebido e está em processamento artesanal em nosso ateliê. Em breve continuaremos o atendimento via WhatsApp.
+            {translate('thanks')}, {formData.name}. Seu pedido foi recebido e está em processamento artesanal em nosso ateliê. Em breve continuaremos o atendimento via WhatsApp.
           </p>
           <Link to="/" className="bg-navy text-white px-10 py-4 text-[11px] tracking-[0.3em] font-bold uppercase inline-block">
             Voltar ao Início
@@ -255,10 +266,79 @@ const Checkout = () => {
               )}
             </div>
 
+            {/* Gift Options */}
+            <div className="bg-white p-10 shadow-sm border border-gray-100">
+              <div className="flex justify-between items-center mb-10 border-b border-gray-100 pb-6">
+                <h3 className="text-[10px] tracking-[0.4em] uppercase font-bold text-navy flex items-center gap-2">
+                  <Gift size={12} className="text-rose-400" />
+                  02. Opções de Presente
+                </h3>
+                <span className="text-[9px] text-rose-400 font-bold uppercase tracking-widest bg-rose-50 px-3 py-1">Cortesia</span>
+              </div>
+
+              <div className="space-y-6">
+                <label className="flex items-center gap-4 cursor-pointer group">
+                  <div className="relative flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={isGift}
+                      onChange={(e) => setIsGift(e.target.checked)}
+                      className="peer h-6 w-6 cursor-pointer appearance-none border-2 border-gray-200 transition-all checked:border-navy checked:bg-navy"
+                    />
+                    <svg
+                      className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <span className="text-navy font-bold text-xs uppercase tracking-widest group-hover:text-navy/70 transition-colors">
+                    Este pedido é um presente
+                  </span>
+                </label>
+
+                {isGift && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    className="space-y-6 pt-4"
+                  >
+                    <div className="p-6 bg-rose-50/50 border border-rose-100">
+                      <p className="text-xs text-navy/70 leading-relaxed italic">
+                        "Sua peça será enviada com nossa embalagem premium de seda e caixa exclusiva, sem custos adicionais."
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="text-[9px] uppercase tracking-widest text-gray-400 block mb-3">
+                        Mensagem Personalizada (Opcional)
+                      </label>
+                      <textarea
+                        value={giftMessage}
+                        onChange={(e) => setGiftMessage(e.target.value)}
+                        placeholder="Escreva aqui sua mensagem dedicada..."
+                        maxLength={200}
+                        className="w-full border border-gray-100 p-4 text-sm focus:outline-none focus:border-navy min-h-[100px] resize-none"
+                      />
+                      <p className="text-[8px] text-gray-400 text-right mt-1 uppercase tracking-widest">
+                        {giftMessage.length} / 200 caracteres
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+
             {/* Payment Method */}
             <div className="bg-white p-10 shadow-sm border border-gray-100">
               <div className="flex justify-between items-center mb-10 border-b border-gray-100 pb-6">
-                <h3 className="text-[10px] tracking-[0.4em] uppercase font-bold text-navy">02. Método de Pagamento</h3>
+                <h3 className="text-[10px] tracking-[0.4em] uppercase font-bold text-navy">03. Método de Pagamento</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <button

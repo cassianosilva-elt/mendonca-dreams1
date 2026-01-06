@@ -66,6 +66,44 @@ const SizeGuide = () => {
                             <p className="text-gray-600 font-light text-sm">Meça em volta da parte mais larga dos seus quadris, cerca de 20cm abaixo da cintura.</p>
                         </div>
                     </div>
+
+                    <div className="mt-20 pt-12 border-t border-gray-100">
+                        <h2 className="text-3xl font-serif text-navy mb-8 italic">Comprando para Presentear?</h2>
+                        <div className="bg-rose-50/50 p-8 md:p-12">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                <div>
+                                    <h4 className="text-[10px] tracking-[0.2em] uppercase font-bold text-navy mb-4">Dicas de Tamanho</h4>
+                                    <ul className="space-y-4 text-gray-600 font-light text-sm">
+                                        <li className="flex gap-4">
+                                            <span className="text-navy font-bold">01.</span>
+                                            <span>Verifique as etiquetas das peças favoritas dela (procure por marcas de alfaiataria similar).</span>
+                                        </li>
+                                        <li className="flex gap-4">
+                                            <span className="text-navy font-bold">02.</span>
+                                            <span>Em caso de dúvida entre dois tamanhos, escolha o maior para maior conforto no ajuste.</span>
+                                        </li>
+                                        <li className="flex gap-4">
+                                            <span className="text-navy font-bold">03.</span>
+                                            <span>Nossas peças possuem margens de costura internas que permitem pequenos ajustes por um alfaiate.</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 className="text-[10px] tracking-[0.2em] uppercase font-bold text-navy mb-4">Facilidades Maison</h4>
+                                    <ul className="space-y-4 text-gray-600 font-light text-sm">
+                                        <li className="flex gap-4">
+                                            <span className="text-navy font-bold font-serif italic">Troca Facilitada:</span>
+                                            <span>A primeira troca é por nossa conta e pode ser solicitada em até 30 dias.</span>
+                                        </li>
+                                        <li className="flex gap-4">
+                                            <span className="text-navy font-bold font-serif italic">Atendimento VIP:</span>
+                                            <span>Fale com nossos estilistas via WhatsApp para ajuda personalizada na escolha.</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Gift, User, Heart } from 'lucide-react';
 
 const Login: React.FC = () => {
   const location = useLocation();
@@ -12,6 +13,8 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [gender, setGender] = useState<'female' | 'male' | 'other' | ''>('');
+  const [shoppingFor, setShoppingFor] = useState<'self' | 'gift' | ''>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +36,13 @@ const Login: React.FC = () => {
         if (password !== confirmPassword) {
           throw new Error('As senhas não coincidem');
         }
-        await signUp(email, password, name);
+        await signUp(
+          email,
+          password,
+          name,
+          gender || undefined,
+          shoppingFor || undefined
+        );
         // After successful signup, user might need to confirm email or is logged in
         // signUp function in AuthContext already handles the alert for email confirmation
       } else {
@@ -140,6 +149,79 @@ const Login: React.FC = () => {
                       placeholder="********"
                       className="w-full border-b border-gray-200 py-4 focus:border-navy focus:outline-none transition-all placeholder:text-gray-300 font-light"
                     />
+                  </motion.div>
+                )}
+
+                {/* Optional fields for better experience */}
+                {isSignUp && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                    className="space-y-6 pt-4 border-t border-gray-100"
+                  >
+                    <p className="text-[9px] text-gray-400 uppercase tracking-widest text-center">Campos opcionais</p>
+
+                    {/* Gender Selection */}
+                    <div>
+                      <label className="text-[10px] tracking-[0.2em] uppercase font-bold text-navy mb-4 block">
+                        Como você se identifica?
+                      </label>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setGender(gender === 'female' ? '' : 'female')}
+                          className={`flex-1 py-3 px-4 border-2 text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${gender === 'female'
+                              ? 'border-navy bg-navy text-white'
+                              : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                            }`}
+                        >
+                          <Heart size={14} />
+                          Feminino
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setGender(gender === 'male' ? '' : 'male')}
+                          className={`flex-1 py-3 px-4 border-2 text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${gender === 'male'
+                              ? 'border-navy bg-navy text-white'
+                              : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                            }`}
+                        >
+                          <User size={14} />
+                          Masculino
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Shopping Purpose */}
+                    <div>
+                      <label className="text-[10px] tracking-[0.2em] uppercase font-bold text-navy mb-4 block">
+                        Para quem você está comprando?
+                      </label>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setShoppingFor(shoppingFor === 'self' ? '' : 'self')}
+                          className={`flex-1 py-3 px-4 border-2 text-[10px] uppercase tracking-widest font-bold transition-all ${shoppingFor === 'self'
+                              ? 'border-navy bg-navy text-white'
+                              : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                            }`}
+                        >
+                          Para mim
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShoppingFor(shoppingFor === 'gift' ? '' : 'gift')}
+                          className={`flex-1 py-3 px-4 border-2 text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${shoppingFor === 'gift'
+                              ? 'border-navy bg-navy text-white'
+                              : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                            }`}
+                        >
+                          <Gift size={14} />
+                          Presentear
+                        </button>
+                      </div>
+                    </div>
                   </motion.div>
                 )}
               </motion.div>

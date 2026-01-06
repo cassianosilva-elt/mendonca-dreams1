@@ -1,13 +1,19 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Send, X } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Send, X, MessageSquare, Sparkles, Loader2, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getStylingAdvice } from '../services/gemini';
 import { ChatMessage } from '../types';
+import { useGenderedLanguage } from '../hooks/useGenderedLanguage';
+import OptimizedImage from './OptimizedImage';
 
 const AIStylist: React.FC = () => {
+  const { user } = useAuth();
+  const { translate } = useGenderedLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'model', text: 'Bem-vinda à Mendonça Dreams. Sou sua consultora de estilo pessoal. Como posso elevar seu visual hoje?' }
+    { role: 'model', text: `${translate('welcome')} à Mendonça Dreams. Sou su${translate('she') === 'ela' ? 'a' : 'eu'} ${translate('stylist')} pessoal. Como posso elevar seu visual hoje?` }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -24,13 +30,20 @@ const AIStylist: React.FC = () => {
 
     const userText = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', text: userText }]);
+    const newUserMessage: ChatMessage = { role: 'user', text: userText };
+    setMessages(prev => [...prev, newUserMessage]);
     setIsLoading(true);
 
-    const response = await getStylingAdvice(userText, messages);
+    try {
+      const response = await getStylingAdvice(userText, [...messages, newUserMessage], user || undefined);
 
-    setMessages(prev => [...prev, { role: 'model', text: response }]);
-    setIsLoading(false);
+      const modelMessage: ChatMessage = { role: 'model', text: response };
+      setMessages(prev => [...prev, modelMessage]);
+    } catch (error) {
+      console.error('Error getting styling advice:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

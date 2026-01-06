@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
-import { LogOut, Package, Heart, Settings, User as UserIcon, MapPin, CreditCard, ChevronRight, Trash2, ShoppingBag } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { LogOut, Package, Heart, Settings, User as UserIcon, MapPin, CreditCard, ChevronRight, Trash2, ShoppingBag, Shield } from 'lucide-react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { User, UserPreferences } from '../types';
+import { useGenderedLanguage } from '../hooks/useGenderedLanguage';
 
 const Account = () => {
-  const { user, logout, updateProfile } = useAuth();
+  const { user, logout, updateProfile, isAdmin } = useAuth();
   const { wishlist, removeFromWishlist } = useWishlist();
+  const { translate, t } = useGenderedLanguage();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'orders';
@@ -36,8 +38,8 @@ const Account = () => {
       <div className="container mx-auto px-6 lg:px-12">
         <div className="flex flex-col md:flex-row justify-between items-end mb-20 border-b border-gray-100 pb-12">
           <div>
-            <p className="text-navy/40 text-[10px] tracking-[0.5em] uppercase mb-4 font-semibold">Painel da Cliente</p>
-            <h1 className="text-5xl font-serif text-navy">Bem-vinda, <span className="italic">{user?.name.split(' ')[0]}</span>.</h1>
+            <p className="text-navy/40 text-[10px] tracking-[0.5em] uppercase mb-4 font-semibold">Painel d{t('a', 'o')} {translate('client')}</p>
+            <h1 className="text-5xl font-serif text-navy">{translate('welcome')}, <span className="italic">{user?.name.split(' ')[0]}</span>.</h1>
           </div>
           <button
             onClick={handleLogout}
@@ -62,6 +64,18 @@ const Account = () => {
                 <span>{item.label}</span>
               </button>
             ))}
+
+            {/* Admin Panel Link - Only for admins */}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="w-full flex items-center space-x-4 p-5 text-[11px] tracking-[0.2em] font-bold uppercase transition-all bg-gradient-to-r from-purple-600 to-navy text-white shadow-lg hover:shadow-xl hover:scale-[1.02]"
+              >
+                <Shield size={18} />
+                <span>Painel Admin</span>
+                <ChevronRight size={16} className="ml-auto" />
+              </Link>
+            )}
           </div>
 
           {/* Content */}
@@ -286,6 +300,8 @@ const PreferencesForm = ({ user, updateProfile }: { user: User | null, updatePro
     language: 'pt-BR'
   });
 
+  const [gender, setGender] = useState(user?.gender || '');
+
   const toggle = (key: keyof UserPreferences) => {
     const newPrefs = { ...prefs, [key]: !prefs[key] };
     setPrefs(newPrefs);
@@ -298,8 +314,36 @@ const PreferencesForm = ({ user, updateProfile }: { user: User | null, updatePro
     updateProfile({ preferences: newPrefs });
   };
 
+  const handleGenderChange = (newGender: 'female' | 'male' | 'other') => {
+    setGender(newGender);
+    updateProfile({ gender: newGender });
+  };
+
   return (
     <div className="space-y-12">
+      <div>
+        <h3 className="text-xl font-serif text-navy mb-8 italic">Identidade</h3>
+        <p className="text-gray-400 text-sm mb-8 font-light">Como você prefere ser identificada na Maison.</p>
+        <div className="flex gap-4">
+          <button
+            onClick={() => handleGenderChange('female')}
+            className={`flex-1 p-6 border text-[10px] tracking-[0.2em] font-bold uppercase transition-all flex items-center justify-center gap-3 ${gender === 'female' ? 'bg-navy text-white border-navy shadow-lg' : 'border-gray-100 text-gray-400 hover:border-navy hover:text-navy'
+              }`}
+          >
+            <Heart size={16} />
+            Feminino
+          </button>
+          <button
+            onClick={() => handleGenderChange('male')}
+            className={`flex-1 p-6 border text-[10px] tracking-[0.2em] font-bold uppercase transition-all flex items-center justify-center gap-3 ${gender === 'male' ? 'bg-navy text-white border-navy shadow-lg' : 'border-gray-100 text-gray-400 hover:border-navy hover:text-navy'
+              }`}
+          >
+            <UserIcon size={16} />
+            Masculino
+          </button>
+        </div>
+      </div>
+
       <div>
         <h3 className="text-xl font-serif text-navy mb-8 italic">Notificações</h3>
         <div className="space-y-6">

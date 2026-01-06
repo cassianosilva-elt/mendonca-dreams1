@@ -6,10 +6,11 @@ import { User as SupabaseUser } from '@supabase/supabase-js';
 interface AuthContextType {
   user: AppUser | null;
   login: (email: string, password?: string) => Promise<void>;
-  signUp: (email: string, password?: string, name?: string) => Promise<void>;
+  signUp: (email: string, password?: string, name?: string, gender?: 'female' | 'male' | 'other', shoppingFor?: 'self' | 'gift') => Promise<void>;
   updateProfile: (updates: Partial<AppUser>) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   isLoading: boolean;
 }
 
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AppUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -67,8 +69,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         address: profile?.address,
         preferences: profile?.preferences,
       });
+
+      // Set admin status
+      setIsAdmin(profile?.is_admin === true);
     } catch (error) {
       console.error('Error mapping user:', error);
+      setIsAdmin(false);
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +89,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: email,
         name: 'Cliente VIP (Demo)',
       });
+      // In mock mode, admin@mendonca.com is treated as admin
+      setIsAdmin(email.toLowerCase().includes('admin'));
       return;
     }
 
@@ -104,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password?: string, name?: string) => {
+  const signUp = async (email: string, password?: string, name?: string, gender?: 'female' | 'male' | 'other', shoppingFor?: 'self' | 'gift') => {
     if (IS_MOCK_MODE) {
       // simulate network delay
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -112,6 +120,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: 'mock-id',
         email: email,
         name: name || 'Novo Cliente (Demo)',
+        gender,
+        shoppingFor,
       });
       return;
     }
@@ -122,6 +132,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       options: {
         data: {
           full_name: name,
+          gender,
+          shopping_for: shoppingFor,
         },
         emailRedirectTo: window.location.origin,
       },
@@ -149,6 +161,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone: updates.phone,
           cpf: updates.cpf,
           birth_date: updates.birthDate,
+          gender: updates.gender,
+          shopping_for: updates.shoppingFor,
           address: updates.address,
           preferences: updates.preferences,
         })
@@ -166,15 +180,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     if (IS_MOCK_MODE) {
       setUser(null);
+      setIsAdmin(false);
       return;
     }
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setUser(null);
+    setIsAdmin(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signUp, updateProfile, logout, isAuthenticated: !!user, isLoading }}>
+    <AuthContext.Provider value={{ user, login, signUp, updateProfile, logout, isAuthenticated: !!user, isAdmin, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

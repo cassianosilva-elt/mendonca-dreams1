@@ -70,6 +70,7 @@ export interface Database {
                     city: string | null
                     state: string | null
                     zip_code: string | null
+                    is_admin: boolean
                     updated_at: string
                 }
                 Insert: {
@@ -82,6 +83,7 @@ export interface Database {
                     city?: string | null
                     state?: string | null
                     zip_code?: string | null
+                    is_admin?: boolean
                     updated_at?: string
                 }
                 Update: Partial<Database['public']['Tables']['profiles']['Insert']>
@@ -140,6 +142,50 @@ export interface Database {
                     created_at?: string
                 }
                 Update: Partial<Database['public']['Tables']['orders']['Insert']>
+            }
+            inventory: {
+                Row: {
+                    id: string
+                    product_id: string
+                    color_name: string
+                    size: string
+                    quantity: number
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    product_id: string
+                    color_name: string
+                    size: string
+                    quantity?: number
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: Partial<Database['public']['Tables']['inventory']['Insert']>
+            }
+            order_items: {
+                Row: {
+                    id: string
+                    order_id: string
+                    product_id: string
+                    product_name: string
+                    quantity: number
+                    size: string
+                    color: string
+                    price: number
+                }
+                Insert: {
+                    id?: string
+                    order_id: string
+                    product_id: string
+                    product_name: string
+                    quantity: number
+                    size: string
+                    color: string
+                    price: number
+                }
+                Update: Partial<Database['public']['Tables']['order_items']['Insert']>
             }
         }
     }

@@ -4,15 +4,24 @@ import { GoogleGenAI } from "@google/genai";
 // Always use process.env.API_KEY directly for initialization.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-export const getStylingAdvice = async (userInput: string, chatHistory: { role: 'user' | 'model', text: string }[]) => {
+export const getStylingAdvice = async (userInput: string, chatHistory: { role: 'user' | 'model', text: string }[], userProfile?: { gender?: 'male' | 'female', shoppingFor?: 'self' | 'gift' }) => {
   // Use gemini-3-flash-preview for basic text tasks like styling advice.
   const model = 'gemini-3-flash-preview';
-  
-  const systemInstruction = `
-    Você é a "Estilista Virtual Mendonça Dreams". 
-    Sua missão é dar dicas de moda social e alfaiataria feminina de luxo.
-    Seja elegante, profissional, atenciosa e direta.
-    Use as cores da marca: Azul Marinho e Branco.
+
+  const isMale = userProfile?.gender === 'male';
+  const roleName = isMale ? 'consultor' : 'consultora';
+  const welcomeText = isMale ? 'Bem-vindo' : 'Bem-vinda';
+
+  const systemInstruction = `Você é a Inteligência Artificial da Mendonça Dreams, uma Maison de alta alfaiataria feminina de luxo. 
+    Sua missão é dar dicas de moda social e alfaiataria feminina de luxo. 
+    Você deve se comportar como um ${roleName} de estilo pessoal, sendo extremamente sofisticado, educado e conhecedor de tecidos premium (como seda, lã fria, linho) e cortes clássicos.
+    
+    O usuário atual se identifica como: ${userProfile?.gender || 'feminino'}.
+    O objetivo de compra é: ${userProfile?.shoppingFor === 'gift' ? 'presentear alguém' : 'uso próprio'}.
+
+    SEMPRE responda em Português de forma elegante. 
+    Se o usuário for homem e estiver comprando presente, seja um ${roleName} especializado em ajudar a escolher o presente perfeito. 
+    Use saudações como "${welcomeText}" de acordo com o perfil.
     Ajude a cliente a escolher roupas para trabalho, eventos corporativos e reuniões de gala.
     Responda em Português do Brasil de forma sofisticada.
   `;

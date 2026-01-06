@@ -35,8 +35,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           />
           <div className="absolute inset-0 bg-navy/0 group-hover:bg-navy/5 transition-colors duration-500"></div>
 
-          <div className="absolute inset-x-0 bottom-0 p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out hidden lg:block">
-            <div className="w-full bg-white text-navy py-4 text-[10px] tracking-[0.3em] font-bold shadow-xl flex items-center justify-center space-x-2 uppercase">
+          <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out">
+            <div className="w-full bg-white text-navy py-3 md:py-4 text-[9px] md:text-[10px] tracking-[0.3em] font-bold shadow-xl flex items-center justify-center space-x-2 uppercase">
               <ShoppingBag size={14} />
               <span>Ver Detalhes</span>
             </div>

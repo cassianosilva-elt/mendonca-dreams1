@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingBag, Menu, X, User, Search, Heart } from 'lucide-react';
+import { ShoppingBag, Menu, X, User, Search, Heart, Shield } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,7 +9,7 @@ const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { count } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -24,7 +24,7 @@ const Navbar: React.FC = () => {
 
   const navClass = isScrolled || location.pathname !== '/'
     ? 'bg-white shadow-sm text-navy py-4'
-    : 'bg-transparent text-white py-8';
+    : 'bg-transparent text-white py-4 md:py-6';
 
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-700 ${navClass}`}>
@@ -46,13 +46,24 @@ const Navbar: React.FC = () => {
         </Link>
 
         <div className="flex flex-1 justify-end items-center space-x-4 md:space-x-8">
-          <Link to="/conta?tab=wishlist" className={`hidden sm:block hover:opacity-50 transition-opacity ${(!isScrolled && location.pathname === '/') ? 'text-navy' : ''}`}>
+          {/* Admin Button - Only visible for admins */}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-navy/10 hover:bg-navy hover:text-white text-navy rounded-full transition-all text-[10px] tracking-wider font-semibold"
+              title="Painel Admin"
+            >
+              <Shield size={14} />
+              <span>ADMIN</span>
+            </Link>
+          )}
+          <Link to="/conta?tab=wishlist" className="hidden sm:block hover:opacity-50 transition-opacity">
             <Heart size={18} />
           </Link>
-          <Link to={isAuthenticated ? "/conta" : "/login"} className={`hidden sm:block hover:opacity-50 transition-opacity ${(!isScrolled && location.pathname === '/') ? 'text-navy' : ''}`}>
+          <Link to={isAuthenticated ? "/conta" : "/login"} className="hidden sm:block hover:opacity-50 transition-opacity">
             <User size={18} />
           </Link>
-          <Link to="/carrinho" className={`relative hover:opacity-50 transition-opacity ${(!isScrolled && location.pathname === '/') ? 'text-navy' : ''}`}>
+          <Link to="/carrinho" className="relative hover:opacity-50 transition-opacity">
             <ShoppingBag size={18} />
             {count > 0 && (
               <span className="absolute -top-2 -right-2 text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold bg-navy text-white border-white">
@@ -79,6 +90,12 @@ const Navbar: React.FC = () => {
           <Link to="/sobre">Sobre</Link>
           <Link to="/contato">Contato</Link>
           <Link to={isAuthenticated ? "/conta" : "/login"}>Minha Conta</Link>
+          {isAdmin && (
+            <Link to="/admin" className="flex items-center gap-3 text-purple-700">
+              <Shield size={24} />
+              Painel Admin
+            </Link>
+          )}
         </div>
       </div>
     </nav>

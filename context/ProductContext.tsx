@@ -8,6 +8,7 @@ interface ProductContextType {
     loading: boolean;
     error: string | null;
     getProductBySlug: (slug: string) => Product | undefined;
+    refreshProducts: () => Promise<void>;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
@@ -17,58 +18,53 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                setLoading(true);
-                // Check if credentials exist before trying to fetch to avoid console spam
-                if (IS_MOCK_MODE) {
-                    console.log('Running in Product MOCK MODE. Using static data.');
-                    setProducts(PRODUCTS);
-                    setLoading(false);
-                    return;
-                }
-
-                const { data, error } = await supabase
-                    .from('products')
-                    .select('*');
-
-                if (error) throw error;
-
-                if (data && data.length > 0) {
-                    // Transform Supabase data if necessary (e.g. ensure shapes match)
-                    // For now assuming direct mapping fits or we map fields
-                    const mappedProducts: Product[] = data.map(item => ({
-                        id: item.id,
-                        slug: item.slug,
-                        name: item.name,
-                        category: item.category,
-                        price: item.price,
-                        images: item.images,
-                        description: item.description,
-                        details: item.details,
-                        composition: item.composition,
-                        sizes: item.sizes,
-                        colors: item.colors as any // Casting JSON to specific type
-                    }));
-                    setProducts(mappedProducts);
-                } else {
-                    // If table is empty, fall back? Or just show empty. 
-                    // Let's fall back to constants for demo purposes if DB is empty
-                    console.log('No products in DB, using static data.');
-                    setProducts(PRODUCTS);
-                }
-
-            } catch (err: any) {
-                console.error('Error fetching products:', err.message);
-                setError(err.message);
-                // Fallback on error
+    const fetchProducts = async () => {
+        try {
+            setLoading(true);
+            // Check if credentials exist before trying to fetch to avoid console spam
+            if (IS_MOCK_MODE) {
                 setProducts(PRODUCTS);
-            } finally {
                 setLoading(false);
+                return;
             }
-        };
 
+            const { data, error } = await supabase
+                .from('products')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            const dbProducts: Product[] = (data || []).map(item => ({
+                id: item.id,
+                slug: item.slug,
+                name: item.name,
+                category: item.category,
+                price: item.price,
+                images: item.images,
+                description: item.description,
+                details: item.details,
+                composition: item.composition,
+                sizes: item.sizes,
+                colors: item.colors as any
+            }));
+
+            // Merge logic: Show all DB products + any generic products that don't share a slug with a DB product
+            const dbSlugs = new Set(dbProducts.map(p => p.slug));
+            const genericProducts = PRODUCTS.filter(p => !dbSlugs.has(p.slug));
+
+            setProducts([...dbProducts, ...genericProducts]);
+        } catch (err: any) {
+            console.error('Error fetching products:', err.message);
+            setError(err.message);
+            // Fallback on error
+            setProducts(PRODUCTS);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchProducts();
     }, []);
 
@@ -77,7 +73,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     return (
-        <ProductContext.Provider value={{ products, loading, error, getProductBySlug }}>
+        <ProductContext.Provider value={{ products, loading, error, getProductBySlug, refreshProducts: fetchProducts }}>
             {children}
         </ProductContext.Provider>
     );

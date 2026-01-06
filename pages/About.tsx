@@ -1,8 +1,9 @@
-
 import React from 'react';
 import SEO from '../components/SEO';
+import { useGenderedLanguage } from '../hooks/useGenderedLanguage';
 
 const About = () => {
+  const { translate, t } = useGenderedLanguage();
   return (
     <div className="pt-40 pb-24 bg-white">
       <SEO
@@ -12,9 +13,9 @@ const About = () => {
       <div className="container mx-auto px-6 lg:px-12">
         <div className="max-w-4xl mx-auto text-center mb-32">
           <span className="text-navy/40 text-[10px] tracking-[0.5em] uppercase mb-8 block font-semibold">O Legado</span>
-          <h1 className="text-5xl md:text-7xl font-serif text-navy mb-12 italic">Mendonça Dreams</h1>
+          <h1 className="text-5xl md:text-7xl font-serif text-navy mb-8 italic">Maison Mendonça</h1>
           <p className="text-gray-500 text-lg md:text-xl font-light leading-relaxed">
-            Fundada sobre a premissa de que o corte perfeito é a forma mais pura de expressão, a Mendonça Dreams nasceu para vestir a mulher que não apenas ocupa espaços, mas os define.
+            Fundada sobre a premissa de que o corte perfeito é a forma mais pura de expressão, a Mendonça Dreams nasceu para vestir {t('a mulher', 'o homem')} que não apenas ocupa espaços, mas os define.
           </p>
         </div>
 
@@ -25,7 +26,7 @@ const About = () => {
           <div className="space-y-10">
             <h2 className="text-4xl font-serif text-navy leading-tight">Mestres em <span className="italic">Lã e Seda</span>.</h2>
             <p className="text-gray-500 leading-relaxed font-light text-lg">
-              Cada peça que sai de nosso ateliê passa por 42 pontos de controle de qualidade. Utilizamos exclusivamente fibras naturais provenientes das melhores tecelagens italianas e inglesas, garantindo que sua armadura moderna dure por gerações.
+              Cada peça que sai de nosso ateliê passa por 42 pontos de controle de qualidade. Utilizamos exclusivamente fibras naturais provenientes das melhores tecelagens italianas e inglesas, garantindo que {t('sua', 'seu')} armadura moderna dure por gerações.
             </p>
             <div className="border-l-2 border-navy/10 pl-8 space-y-6 italic text-navy/60">
               <p>"Não vendemos roupas. Vendemos a confiança inabalável que surge quando você sabe que está impecável."</p>
