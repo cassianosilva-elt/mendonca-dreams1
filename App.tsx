@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { CartProvider } from './context/CartContext';
 import { ProductProvider } from './context/ProductContext';
@@ -9,6 +9,7 @@ import { WishlistProvider } from './context/WishlistContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AIStylist from './components/AIStylist';
+import { Shield } from 'lucide-react';
 
 // Pages
 import Home from './pages/Home';
@@ -28,6 +29,7 @@ import SizeGuide from './pages/SizeGuide';
 import Privacy from './pages/Privacy';
 import Gifts from './pages/Gifts';
 import EmailConfirmed from './pages/EmailConfirmed';
+import Terms from './pages/Terms';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -57,7 +59,29 @@ const AdminRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   }
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!isAdmin) return <Navigate to="/" replace />;
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6 text-center">
+        <div className="bg-white p-12 shadow-xl rounded-2xl max-w-md w-full border border-gray-100">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Shield size={32} />
+          </div>
+          <h2 className="text-2xl font-serif text-navy mb-4">Acesso Restrito</h2>
+          <p className="text-gray-500 text-sm mb-8 leading-relaxed">
+            Esta área é exclusiva para administradores da Maison Mendonça Dreams. Se você acredita que deveria ter acesso, entre em contato com o suporte técnico.
+          </p>
+          <Navigate to="/" replace /> {/* We still redirect, but ideally this would show for a few seconds or be a real page. For now, let's keep it simple but informative if they hit the URL directly. Actually, the Navigate will trigger immediately. Let's use a Link instead. */}
+          <Link
+            to="/"
+            className="inline-block bg-navy text-white px-8 py-4 text-[11px] tracking-[0.3em] font-bold uppercase hover:bg-navy/90 transition-all w-full"
+          >
+            Voltar para a Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 };
@@ -104,6 +128,7 @@ function App() {
                           <Route path="/guia-de-medidas" element={<SizeGuide />} />
                           <Route path="/presentes" element={<Gifts />} />
                           <Route path="/privacidade" element={<Privacy />} />
+                          <Route path="/termos" element={<Terms />} />
                           <Route path="/confirmado" element={<EmailConfirmed />} />
                           <Route path="*" element={<Navigate to="/" replace />} />
                         </Routes>

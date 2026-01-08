@@ -9,7 +9,7 @@ import { useGenderedLanguage } from '../hooks/useGenderedLanguage';
 import { getUserOrders } from '../services/supabase';
 
 const Account = () => {
-  const { user, logout, updateProfile, isAdmin } = useAuth();
+  const { user, logout, updateProfile, isAdmin, isMockMode } = useAuth();
   const { wishlist, removeFromWishlist } = useWishlist();
   const { translate, t } = useGenderedLanguage();
   const navigate = useNavigate();
@@ -41,8 +41,8 @@ const Account = () => {
     setSearchParams({ tab: tabId });
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -56,9 +56,31 @@ const Account = () => {
   return (
     <div className="pt-40 pb-24 bg-white min-h-screen">
       <div className="container mx-auto px-6 lg:px-12">
+        {isMockMode && (
+          <div className="mb-12 p-4 bg-amber-50 border border-amber-100 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-amber-100 p-2 rounded-full text-amber-600">
+                <Shield size={20} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-amber-800 uppercase tracking-widest">Modo de Demonstração Ativo</p>
+                <p className="text-xs text-amber-600 mt-1">Conexão com o banco de dados via Supabase não formatada. Dados são simulados.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row justify-between items-end mb-20 border-b border-gray-100 pb-12">
           <div>
-            <p className="text-navy/40 text-[10px] tracking-[0.5em] uppercase mb-4 font-semibold">Painel d{t('a', 'o')} {translate('client')}</p>
+            <div className="flex items-center gap-4 mb-4">
+              <p className="text-navy/40 text-[10px] tracking-[0.5em] uppercase font-semibold">Painel d{t('a', 'o')} {translate('client')}</p>
+              {isAdmin && (
+                <span className="px-3 py-1 bg-navy text-white text-[8px] tracking-[0.2em] font-bold uppercase rounded-full flex items-center gap-1.5">
+                  <Shield size={10} />
+                  Admin
+                </span>
+              )}
+            </div>
             <h1 className="text-5xl font-serif text-navy">{translate('welcome')}, <span className="italic">{user?.name.split(' ')[0]}</span>.</h1>
           </div>
           <button
@@ -86,7 +108,7 @@ const Account = () => {
             ))}
 
             {/* Admin Panel Link - Only for admins */}
-            {isAdmin && (
+            {isAdmin ? (
               <Link
                 to="/admin"
                 className="w-full flex items-center space-x-4 p-5 text-[11px] tracking-[0.2em] font-bold uppercase transition-all bg-gradient-to-r from-purple-600 to-navy text-white shadow-lg hover:shadow-xl hover:scale-[1.02]"
@@ -95,6 +117,15 @@ const Account = () => {
                 <span>Painel Admin</span>
                 <ChevronRight size={16} className="ml-auto" />
               </Link>
+            ) : (
+              isMockMode && (
+                <div className="p-5 bg-gray-50 border border-dashed border-gray-200 rounded-lg">
+                  <p className="text-[9px] text-gray-400 uppercase tracking-widest font-bold mb-2">Acesso Admin Oculto</p>
+                  <p className="text-[10px] text-gray-400 leading-relaxed font-light">
+                    No modo de demonstração, o painel só aparece para e-mails que contenham a palavra <span className="text-navy font-bold">"admin"</span>.
+                  </p>
+                </div>
+              )
             )}
           </div>
 

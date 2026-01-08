@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { ShoppingBag, Menu, X, User, Search, Heart, Shield } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ShoppingBag, Menu, X, User, Search, Heart, Shield, LogOut } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import SearchModal from './SearchModal';
@@ -11,8 +11,9 @@ const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const { count } = useCart();
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -60,11 +61,11 @@ const Navbar: React.FC = () => {
             {isAdmin && (
               <Link
                 to="/admin"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-navy/10 hover:bg-navy hover:text-white text-navy rounded-full transition-all text-[10px] tracking-wider font-semibold"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-navy/10 hover:bg-navy hover:text-white text-navy rounded-full transition-all text-[10px] tracking-wider font-semibold border border-navy/20"
                 title="Painel Admin"
               >
                 <Shield size={14} />
-                <span>ADMIN</span>
+                <span className="hidden xs:inline">ADMIN</span>
               </Link>
             )}
             <button
@@ -111,6 +112,20 @@ const Navbar: React.FC = () => {
                 <Shield size={24} />
                 Painel Admin
               </Link>
+            )}
+
+            {isAuthenticated && (
+              <button
+                onClick={async () => {
+                  await logout();
+                  setMobileMenuOpen(false);
+                  navigate('/');
+                }}
+                className="flex items-center gap-3 text-red-500 mt-4 border-t border-gray-100 pt-8"
+              >
+                <LogOut size={24} />
+                Encerrar Sessão
+              </button>
             )}
           </div>
         </div>

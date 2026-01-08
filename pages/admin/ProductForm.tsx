@@ -101,21 +101,32 @@ const ProductForm: React.FC = () => {
 
     const handleFileUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+        console.log('File selected:', file);
         if (!file) return;
 
         if (IS_MOCK_MODE) {
+            console.warn('Upload not available in mock mode');
             alert('Upload não disponível em modo demonstração');
             return;
         }
 
         setUploadingIndex(index);
-        const publicUrl = await uploadProductImage(file);
-        setUploadingIndex(null);
+        console.log('Starting upload for file:', file.name);
+        try {
+            const publicUrl = await uploadProductImage(file);
+            console.log('Upload result (publicUrl):', publicUrl);
+            setUploadingIndex(null);
 
-        if (publicUrl) {
-            handleImageChange(index, publicUrl);
-        } else {
-            alert('Erro ao fazer upload da imagem. Verifique se o bucket "products" existe e tem permissões públicas.');
+            if (publicUrl) {
+                handleImageChange(index, publicUrl);
+            } else {
+                console.error('Upload failed: publicUrl is null');
+                alert('Erro ao fazer upload da imagem. Verifique o console para mais detalhes ou verifique se o bucket "products" existe e tem permissões públicas.');
+            }
+        } catch (error) {
+            console.error('Error in handleFileUpload:', error);
+            setUploadingIndex(null);
+            alert('Erro inesperado durante o upload. Verifique o console.');
         }
     };
 

@@ -63,6 +63,26 @@ const ProductDetail: React.FC = () => {
         description={product.description}
         image={product.images[0]}
       />
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org/",
+          "@type": "Product",
+          "name": product.name,
+          "image": product.images,
+          "description": product.description,
+          "brand": {
+            "@type": "Brand",
+            "name": "Mendonça Dreams"
+          },
+          "offers": {
+            "@type": "Offer",
+            "url": window.location.href,
+            "priceCurrency": "BRL",
+            "price": product.price,
+            "availability": isCurrentVariantInStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+          }
+        })}
+      </script>
       <div className="container mx-auto px-6 lg:px-12">
         <div className="flex items-center space-x-2 text-[10px] tracking-[0.2em] uppercase text-gray-400 mb-12">
           <Link to="/" className="hover:text-navy transition">Home</Link>

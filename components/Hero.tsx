@@ -53,24 +53,24 @@ const Hero = () => {
       </div>
 
       <style>{`
-@keyframes fadeIn {
+        @keyframes fadeIn {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
-}
-@keyframes slowZoom {
+        }
+        @keyframes slowZoom {
           from { transform: scale(1); }
           to { transform: scale(1.1); }
-}
-@keyframes scrollRight {
-  0 % { transform: translateX(-100 %); }
-  100 % { transform: translateX(100 %); }
-}
-        .animate - fadeIn {
-  animation: fadeIn 1.2s cubic - bezier(0.16, 1, 0.3, 1) forwards;
-}
-        .animate - slowZoom { animation: slowZoom 20s linear infinite alternate; }
-        .animate - scrollRight { animation: scrollRight 2s infinite ease -in -out; }
-`}</style>
+        }
+        @keyframes scrollRight {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-slowZoom { animation: slowZoom 20s linear infinite alternate; }
+        .animate-scrollRight { animation: scrollRight 2s infinite ease-in-out; }
+      `}</style>
     </section>
   );
 };

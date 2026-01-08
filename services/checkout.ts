@@ -3,6 +3,8 @@ import { CartItem } from '../types';
 
 interface CheckoutData {
     userId: string;
+    userName: string;
+    userEmail: string;
     items: CartItem[];
     total: number;
     shippingAddress: any;
@@ -10,7 +12,7 @@ interface CheckoutData {
     paymentDetails: any;
 }
 
-export const createOrder = async ({ userId, items, total, shippingAddress }: CheckoutData) => {
+export const createOrder = async ({ userId, userName, userEmail, items, total, shippingAddress }: CheckoutData) => {
     if (IS_MOCK_MODE) {
         // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -52,12 +54,32 @@ export const createOrder = async ({ userId, items, total, shippingAddress }: Che
         if (itemsError) throw new Error(`Erro ao salvar itens do pedido: ${itemsError.message}`);
 
         // 3. Clear Cart (Optional: can be handled by UI or Trigger)
-        // We'll leave it to the UI to clear the context state, or clear DB cart here.
-        // Let's clear DB cart items for this user
         const { data: cart } = await supabase.from('carts').select('id').eq('user_id', userId).single();
         if (cart) {
             await supabase.from('cart_items').delete().eq('cart_id', cart.id);
         }
+
+        // 4. Send Confirmation Email (Async - don't block user)
+        import('./email').then(({ sendOrderConfirmationEmail }) => {
+            sendOrderConfirmationEmail({
+                id: order.id,
+                userId: userId,
+                userName: userName,
+                userEmail: userEmail,
+                status: 'pending',
+                total: total,
+                shippingAddress: shippingAddress,
+                items: items.map(item => ({
+                    productId: item.id,
+                    productName: item.name,
+                    quantity: item.quantity,
+                    size: item.selectedSize || 'N/A',
+                    color: item.selectedColor || 'N/A',
+                    price: item.price
+                })),
+                createdAt: new Date().toISOString()
+            }).catch(err => console.error('Silent email failure:', err));
+        });
 
         return { success: true, orderId: order.id };
 

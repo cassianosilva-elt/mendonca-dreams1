@@ -2,7 +2,7 @@
 import React from 'react';
 import Hero from '../components/Hero';
 import ProductCard from '../components/ProductCard';
-import GiftSection from '../components/GiftSection';
+
 import { useProducts } from '../context/ProductContext';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -34,7 +34,7 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      <GiftSection />
+
       <div className="container mx-auto px-6 lg:px-12">
         <div className="flex justify-between items-end mb-20">
           <h2 className="text-3xl font-serif text-navy italic">Destaques da Maison</h2>

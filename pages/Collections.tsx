@@ -5,9 +5,10 @@ import { useProducts } from '../context/ProductContext';
 import { CATEGORIES } from '../constants';
 import ProductCard from '../components/ProductCard';
 import { SlidersHorizontal, X } from 'lucide-react';
+import { ProductSkeleton } from '../components/Skeleton';
 
 const Collections = () => {
-  const { products } = useProducts();
+  const { products, isLoading } = useProducts();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const searchQuery = searchParams.get('search') || '';
@@ -70,9 +71,15 @@ const Collections = () => {
 
         {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16">
-          {filteredProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {isLoading ? (
+            Array.from({ length: 8 }).map((_, idx) => (
+              <ProductSkeleton key={idx} />
+            ))
+          ) : (
+            filteredProducts.map(product => (
+              <ProductCard key={product.id} product={product} />
+            ))
+          )}
         </div>
       </div>
     </div>

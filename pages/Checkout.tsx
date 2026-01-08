@@ -97,6 +97,8 @@ const Checkout = () => {
       // Create order in database
       await createOrder({
         userId: user.id,
+        userName: formData.name,
+        userEmail: formData.email,
         items: cart,
         total: total,
         shippingAddress: shippingAddress,

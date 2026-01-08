@@ -611,8 +611,12 @@ export const uploadProductImage = async (file: File): Promise<string | null> => 
             .getPublicUrl(filePath);
 
         return data.publicUrl;
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error uploading image:', error);
+        // Provide more detailed error message if possible
+        if (error.message) {
+            console.error('Upload error details:', error.message);
+        }
         return null;
     }
 };

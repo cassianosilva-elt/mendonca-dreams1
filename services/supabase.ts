@@ -1,19 +1,44 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Access environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Helper to sanitize environment variables
+const sanitize = (val: any): string | undefined => {
+    if (typeof val !== 'string') return undefined;
+    const sanitized = val.trim();
+    if (sanitized === 'undefined' || sanitized === 'null' || sanitized === '' || sanitized.includes('placeholder')) {
+        return undefined;
+    }
+    return sanitized;
+};
 
-export const IS_MOCK_MODE = !supabaseUrl || supabaseUrl.includes('placeholder');
+const supabaseUrl = sanitize(import.meta.env.VITE_SUPABASE_URL);
+const supabaseAnonKey = sanitize(import.meta.env.VITE_SUPABASE_ANON_KEY);
+
+// More robust check for mock mode
+const isValidUrl = (url: string | undefined): boolean => {
+    if (!url) return false;
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+        return false;
+    }
+};
+
+export const IS_MOCK_MODE = !supabaseUrl ||
+    !supabaseAnonKey ||
+    supabaseUrl.includes('placeholder') ||
+    supabaseAnonKey.includes('placeholder') ||
+    !isValidUrl(supabaseUrl);
 
 if (IS_MOCK_MODE) {
-    console.warn('Supabase credentials not found or using placeholders. Running in MOCK MODE.');
+    console.warn('Supabase credentials not found, invalid, or using placeholders. Running in MOCK MODE.');
 }
 
-// Create Supabase client
+// Create Supabase client with safety fallback
 export const supabase = createClient(
-    supabaseUrl || 'https://placeholder.supabase.co',
-    supabaseAnonKey || 'placeholder'
+    (IS_MOCK_MODE || !supabaseUrl) ? 'https://placeholder.supabase.co' : supabaseUrl,
+    (IS_MOCK_MODE || !supabaseAnonKey) ? 'placeholder' : supabaseAnonKey
 );
 
 // Database Types Helper
@@ -226,7 +251,25 @@ export const getUserOrders = async (userId: string) => {
         .order('created_at', { ascending: false });
 
     if (ordersError) throw ordersError;
-    return orders;
+
+    // Map database snake_case to frontend camelCase
+    return orders.map(order => ({
+        id: order.id,
+        userId: order.user_id,
+        status: order.status,
+        total: order.total,
+        shippingAddress: order.shipping_address,
+        stripePaymentId: order.stripe_payment_id,
+        createdAt: order.created_at,
+        items: (order.order_items as any[] || []).map(item => ({
+            productId: item.product_id,
+            productName: item.product_name,
+            quantity: item.quantity,
+            size: item.size,
+            color: item.color,
+            price: item.price
+        }))
+    }));
 };
 
 export const getProductInventory = async (productId: string) => {
@@ -238,7 +281,16 @@ export const getProductInventory = async (productId: string) => {
         .eq('product_id', productId);
 
     if (error) throw error;
-    return data;
+
+    return data.map(item => ({
+        id: item.id,
+        productId: item.product_id,
+        colorName: item.color_name,
+        size: item.size,
+        quantity: item.quantity,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at
+    }));
 };
 
 export const getProductReviews = async (productId: string) => {
