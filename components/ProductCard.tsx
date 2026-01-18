@@ -32,6 +32,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             src={product.images[0]}
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-110"
+            style={{ aspectRatio: '3/4' }}
           />
           <div className="absolute inset-0 bg-navy/0 group-hover:bg-navy/5 transition-colors duration-500"></div>
 

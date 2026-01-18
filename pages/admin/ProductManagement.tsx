@@ -84,13 +84,13 @@ const ProductManagement: React.FC = () => {
         if (!deleteModal.product) return;
 
         setIsDeleting(true);
-        const success = await deleteProduct(deleteModal.product.id);
+        const result = await deleteProduct(deleteModal.product.id);
 
-        if (success) {
+        if (result.success) {
             await refreshProducts();
             setProducts((prev) => prev.filter((p) => p.id !== deleteModal.product!.id));
         } else {
-            alert('Erro ao excluir produto. Tente novamente.');
+            alert(result.error || 'Erro ao excluir produto. Tente novamente.');
         }
 
         setIsDeleting(false);

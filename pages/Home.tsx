@@ -37,7 +37,7 @@ const Home: React.FC = () => {
 
       <div className="container mx-auto px-6 lg:px-12">
         <div className="flex justify-between items-end mb-20">
-          <h2 className="text-3xl font-serif text-navy italic">Destaques da Maison</h2>
+          <h2 className="text-3xl font-serif text-navy italic">Destaques da Mendonça Dreams</h2>
           <Link to="/colecoes" className="text-[10px] tracking-[0.2em] uppercase font-bold text-navy/40 hover:text-navy transition">Ver tudo</Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">

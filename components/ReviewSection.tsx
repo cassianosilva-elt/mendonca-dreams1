@@ -54,7 +54,7 @@ const ReviewSection: React.FC = () => {
       setComment('');
       setRating(5);
       await fetchReviews();
-      alert('Obrigada por sua avaliação! Ela foi publicada na Maison.');
+      alert('Obrigada por sua avaliação! Ela foi publicada no site.');
     } catch (error) {
       console.error('Error adding review:', error);
       alert('Erro ao enviar avaliação.');
@@ -71,7 +71,7 @@ const ReviewSection: React.FC = () => {
     <div className="mt-20">
       <div className="flex flex-col lg:flex-row justify-between items-start gap-12 mb-20 border-b border-gray-100 pb-12">
         <div className="flex-1">
-          <h2 className="text-3xl font-serif text-navy mb-4">Experiências Maison</h2>
+          <h2 className="text-3xl font-serif text-navy mb-4">Experiências Dreams</h2>
           <div className="flex items-center space-x-6">
             <div className="flex text-navy gap-1">
               {[...Array(5)].map((_, i) => (

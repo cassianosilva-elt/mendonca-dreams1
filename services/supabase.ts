@@ -97,6 +97,12 @@ export interface Database {
                     zip_code: string | null
                     is_admin: boolean
                     updated_at: string
+                    cpf: string | null
+                    birth_date: string | null
+                    gender: string | null
+                    shopping_for: string | null
+                    address: Json | null
+                    preferences: Json | null
                 }
                 Insert: {
                     id: string
@@ -110,6 +116,12 @@ export interface Database {
                     zip_code?: string | null
                     is_admin?: boolean
                     updated_at?: string
+                    cpf?: string | null
+                    birth_date?: string | null
+                    gender?: string | null
+                    shopping_for?: string | null
+                    address?: Json | null
+                    preferences?: Json | null
                 }
                 Update: Partial<Database['public']['Tables']['profiles']['Insert']>
             }

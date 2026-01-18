@@ -55,7 +55,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
             <div className="relative bg-white w-full py-8 md:py-12 px-6 lg:px-12 transform transition-transform duration-500 ease-out translate-y-0">
                 <div className="container mx-auto max-w-4xl">
                     <div className="flex items-center justify-between mb-8">
-                        <span className="text-[10px] tracking-[0.5em] uppercase text-navy/40 font-bold italic">Curadoria Maison</span>
+                        <span className="text-[10px] tracking-[0.5em] uppercase text-navy/40 font-bold italic">Curadoria Dreams</span>
                         <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded-full transition-colors">
                             <X size={24} className="text-navy" />
                         </button>
@@ -114,7 +114,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                                         }}
                                         className="w-full py-4 text-[10px] tracking-[0.3em] uppercase font-bold text-navy border border-navy/10 hover:bg-navy hover:text-white transition-all"
                                     >
-                                        Ver Tudo da Maison
+                                        Ver Tudo da Dreams
                                     </button>
                                 </>
                             ) : (

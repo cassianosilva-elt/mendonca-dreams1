@@ -23,7 +23,7 @@ const Privacy = () => {
                     <section>
                         <h2 className="text-2xl font-serif text-navy mb-4">Uso de Dados</h2>
                         <p className="text-gray-600 font-light leading-relaxed">
-                            Seus dados são utilizados exclusivamente para o processamento de compras, entrega de produtos e, caso você autorize, envio de novidades e promoções exclusivas da Maison.
+                            Seus dados são utilizados exclusivamente para o processamento de compras, entrega de produtos e, caso você autorize, envio de novidades e promoções exclusivas.
                         </p>
                     </section>
 

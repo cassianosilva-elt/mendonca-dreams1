@@ -1,7 +1,6 @@
-
 {
-  "name": "Mendonça Dreams - Alta Alfaiataria Feminina",
-  "description": "Uma experiência de luxo em alfaiataria feminina social. Design moderno, cortes precisos e assistência personalizada via IA para o look perfeito.",
+  "name": "Mendonça Dreams - Moda Feminina",
+  "description": "Uma experiência de luxo em moda feminina social. Design moderno, cortes precisos e assistência personalizada via IA para o look perfeito.",
   "requestFramePermissions": [
     "camera"
   ]

@@ -2,7 +2,7 @@ import { useAuth } from '../context/AuthContext';
 
 export const useGenderedLanguage = () => {
     const { user } = useAuth();
-    const gender = user?.gender || 'female'; // Default to female for Maison Mendonça
+    const gender = user?.gender || 'female'; // Default to female for Mendonça Dreams
 
     const isMale = gender === 'male';
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, X, Save, Upload, Loader2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { getProducts, createProduct, updateProduct, uploadProductImage } from '../../services/admin';
+import { getProducts, createProduct, updateProduct, uploadProductImage, uploadProductVideo } from '../../services/admin';
 import { useProducts } from '../../context/ProductContext';
 import { Product, ProductFormData } from '../../types';
 import { CATEGORIES } from '../../constants';
@@ -17,6 +17,7 @@ const ProductForm: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+    const [uploadingVideo, setUploadingVideo] = useState(false);
     const [formData, setFormData] = useState<ProductFormData>({
         name: '',
         slug: '',
@@ -56,6 +57,7 @@ const ProductForm: React.FC = () => {
                 composition: product.composition,
                 sizes: product.sizes,
                 colors: product.colors,
+                videoUrl: product.videoUrl,
             });
         }
         setIsLoading(false);
@@ -127,6 +129,32 @@ const ProductForm: React.FC = () => {
             console.error('Error in handleFileUpload:', error);
             setUploadingIndex(null);
             alert('Erro inesperado durante o upload. Verifique o console.');
+        }
+    };
+
+    const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (IS_MOCK_MODE) {
+            alert('Upload não disponível em modo demonstração');
+            return;
+        }
+
+        setUploadingVideo(true);
+        try {
+            const publicUrl = await uploadProductVideo(file);
+
+            if (publicUrl) {
+                setFormData((prev) => ({ ...prev, videoUrl: publicUrl }));
+            } else {
+                alert('Erro ao fazer upload do vídeo.');
+            }
+        } catch (error) {
+            console.error('Error in handleVideoUpload:', error);
+            alert('Erro inesperado durante o upload.');
+        } finally {
+            setUploadingVideo(false);
         }
     };
 
@@ -520,6 +548,56 @@ const ProductForm: React.FC = () => {
                                         </button>
                                     </span>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* Video */}
+                        <div className="bg-white p-6 rounded-xl border border-gray-100 space-y-4">
+                            <h2 className="text-lg font-semibold text-gray-900">Vídeo</h2>
+                            <p className="text-xs text-gray-500">Adicione um link do YouTube/Vimeo ou faça upload de um arquivo.</p>
+
+                            <div className="space-y-4">
+                                <div className="flex gap-2">
+                                    <div className="relative flex-1">
+                                        <input
+                                            type="url"
+                                            placeholder="URL do vídeo (YouTube, Vimeo, etc)"
+                                            value={formData.videoUrl || ''}
+                                            onChange={(e) => setFormData((prev) => ({ ...prev, videoUrl: e.target.value }))}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy/50"
+                                        />
+                                    </div>
+
+                                    <label className={`p-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-center min-w-[44px] ${uploadingVideo ? 'opacity-50 pointer-events-none' : ''}`}>
+                                        {uploadingVideo ? (
+                                            <Loader2 size={20} className="animate-spin text-navy" />
+                                        ) : (
+                                            <Upload size={20} className="text-gray-500" />
+                                        )}
+                                        <input
+                                            type="file"
+                                            accept="video/*"
+                                            className="hidden"
+                                            onChange={handleVideoUpload}
+                                            disabled={uploadingVideo}
+                                        />
+                                    </label>
+
+                                    {formData.videoUrl && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData((prev) => ({ ...prev, videoUrl: '' }))}
+                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg border border-transparent hover:border-red-100"
+                                        >
+                                            <X size={20} />
+                                        </button>
+                                    )}
+                                </div>
+                                {formData.videoUrl && (
+                                    <div className="aspect-video bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden">
+                                        <p className="text-xs text-gray-400">Vídeo selecionado</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

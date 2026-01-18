@@ -29,7 +29,7 @@ const Collections = () => {
     <div className="pt-40 pb-20 bg-white min-h-screen">
       <div className="container mx-auto px-6 lg:px-12">
         <header className="mb-20 text-center">
-          <h1 className="text-5xl font-serif text-navy mb-6 italic">Coleções Maison</h1>
+          <h1 className="text-5xl font-serif text-navy mb-6 italic">Coleções</h1>
           <p className="text-gray-400 font-light max-w-2xl mx-auto uppercase tracking-[0.2em] text-xs">
             Curadoria exclusiva de alfaiataria atemporal e design contemporâneo.
           </p>

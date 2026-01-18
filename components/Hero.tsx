@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useGenderedLanguage } from '../hooks/useGenderedLanguage';
 
-import heroBg from '../assets/hero-bg.png';
+import heroBg from '../assets/hero-bg (2).png';
 
 const Hero = () => {
   const { t } = useGenderedLanguage();
@@ -18,8 +18,6 @@ const Hero = () => {
           className="w-full h-full object-cover scale-105 animate-slowZoom"
         />
         <div className="absolute inset-0 bg-navy/40 lg:bg-navy/20"></div>
-        <div className="absolute bottom-0 left-0 w-full h-[30vh] md:h-[50vh] bg-gradient-to-t from-white via-white/80 via-30% to-transparent z-20"></div>
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-white z-20"></div>
       </div>
 
       {/* Content */}
@@ -30,15 +28,15 @@ const Hero = () => {
             Mendonça <br />
             <span className="italic font-medium">Alfaiataria Feminina</span>
           </h1>
-          <p className="text-base md:text-lg font-medium mb-8 md:mb-12 text-navy leading-relaxed max-w-lg">
+          <p className="text-base md:text-lg font-medium mb-8 md:mb-12 text-white leading-relaxed max-w-lg">
             Elevando a presença {t('feminina', 'do homem')} e o equilíbrio perfeito entre tradição e modernidade.
           </p>
           <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6">
-            <Link to="/colecoes" className="bg-navy text-white border border-navy px-12 py-5 text-[11px] tracking-[0.3em] font-bold hover:bg-white hover:text-[#002147] transition-all duration-500 transform text-center">
+            <Link to="/colecoes" className="bg-navy text-white border border-white px-12 py-5 text-[11px] tracking-[0.3em] font-bold hover:bg-white hover:text-[#002147] transition-all duration-500 transform text-center">
               VER COLEÇÃO
             </Link>
-            <Link to="/sobre" className="border border-navy/40 text-navy px-12 py-5 text-[11px] tracking-[0.3em] font-bold hover:bg-navy hover:text-white hover:border-navy transition-all duration-500 transform backdrop-blur-sm text-center">
-              SOBRE A MAISON
+            <Link to="/sobre" className="border border-white/40 text-white px-12 py-5 text-[11px] tracking-[0.3em] font-bold hover:bg-navy hover:text-white hover:border-navy transition-all duration-500 transform backdrop-blur-sm text-center">
+              SOBRE A DREAMS
             </Link>
           </div>
         </div>
@@ -46,10 +44,10 @@ const Hero = () => {
 
       {/* Scroll Indicator */}
       <div className="absolute bottom-12 right-6 lg:right-12 flex items-center space-x-4 z-30">
-        <div className="w-12 h-px bg-navy/20 overflow-hidden relative">
-          <div className="absolute top-0 left-0 w-full h-full bg-navy animate-scrollRight"></div>
+        <div className="w-12 h-px bg-white/20 overflow-hidden relative">
+          <div className="absolute top-0 left-0 w-full h-full bg-white animate-scrollRight"></div>
         </div>
-        <span className="text-navy text-[9px] tracking-[0.3em] uppercase opacity-60">Deslize para explorar</span>
+        <span className="text-white text-[9px] tracking-[0.3em] uppercase opacity-60">Deslize para explorar</span>
       </div>
 
       <style>{`

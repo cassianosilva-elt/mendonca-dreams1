@@ -11,13 +11,14 @@ const WHATSAPP_NUMBER = '5511960235151'; // Substitua pelo seu número
 
 const Checkout = () => {
   const { cart, total, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const { translate } = useGenderedLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'shipping' | 'payment' | 'concluded'>('shipping');
   const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'pix' | 'whatsapp'>('whatsapp');
+  const [isSearchingCEP, setIsSearchingCEP] = useState(false);
 
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [shippingAddress, setShippingAddress] = useState(user?.address || {
@@ -33,6 +34,9 @@ const Checkout = () => {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
+    phone: user?.phone || '',
+    cpf: user?.cpf || '',
+    birthDate: user?.birthDate || '',
   });
 
   const [isGift, setIsGift] = useState(false);
@@ -46,18 +50,76 @@ const Checkout = () => {
       setFormData({
         name: user.name || '',
         email: user.email || '',
+        phone: user.phone || '',
+        cpf: user.cpf || '',
+        birthDate: user.birthDate || '',
       });
     }
   }, [user]);
 
+  // CEP Lookup Effect for Checkout
+  React.useEffect(() => {
+    const cep = shippingAddress.zipCode.replace(/\D/g, '');
+    if (cep.length === 8) {
+      const fetchAddress = async () => {
+        setIsSearchingCEP(true);
+        try {
+          const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+          const data = await response.json();
+
+          if (!data.erro) {
+            setShippingAddress(prev => ({
+              ...prev,
+              street: data.logradouro || prev.street,
+              neighborhood: data.bairro || prev.neighborhood,
+              city: data.localidade || prev.city,
+              state: data.uf || prev.state,
+            }));
+          }
+        } catch (error) {
+          console.error('Erro ao buscar CEP:', error);
+        } finally {
+          setIsSearchingCEP(false);
+        }
+      };
+      fetchAddress();
+    }
+  }, [shippingAddress.zipCode]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    let finalValue = value;
+
+    if (name === 'phone') {
+      finalValue = value.replace(/\D/g, '').slice(0, 11);
+      if (finalValue.length > 2) {
+        finalValue = `(${finalValue.slice(0, 2)}) ${finalValue.slice(2)}`;
+      }
+      if (finalValue.length > 9) {
+        finalValue = `${finalValue.slice(0, 10)}-${finalValue.slice(10)}`;
+      }
+    } else if (name === 'cpf') {
+      finalValue = value.replace(/\D/g, '').slice(0, 11);
+      if (finalValue.length > 3) finalValue = `${finalValue.slice(0, 3)}.${finalValue.slice(3)}`;
+      if (finalValue.length > 7) finalValue = `${finalValue.slice(0, 7)}.${finalValue.slice(7)}`;
+      if (finalValue.length > 11) finalValue = `${finalValue.slice(0, 11)}-${finalValue.slice(11)}`;
+    }
+
+    setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setShippingAddress(prev => ({ ...prev, [name]: value }));
+    let finalValue = value;
+
+    if (name === 'zipCode') {
+      finalValue = value.replace(/\D/g, '').slice(0, 8);
+      if (finalValue.length > 5) {
+        finalValue = `${finalValue.slice(0, 5)}-${finalValue.slice(5)}`;
+      }
+    }
+
+    setShippingAddress(prev => ({ ...prev, [name]: finalValue }));
   };
 
   if (cart.length === 0 && step !== 'concluded') return <Navigate to="/carrinho" />;
@@ -94,8 +156,18 @@ const Checkout = () => {
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
 
     try {
+      // 0. Update Profile with missing details if provided
+      const updates: any = {};
+      if (formData.phone && formData.phone !== user.phone) updates.phone = formData.phone;
+      if (formData.cpf && formData.cpf !== user.cpf) updates.cpf = formData.cpf;
+      if (formData.birthDate && formData.birthDate !== user.birthDate) updates.birthDate = formData.birthDate;
+
+      if (Object.keys(updates).length > 0) {
+        await updateProfile(updates);
+      }
+
       // Create order in database
-      await createOrder({
+      const result = await createOrder({
         userId: user.id,
         userName: formData.name,
         userEmail: formData.email,
@@ -106,12 +178,16 @@ const Checkout = () => {
         paymentDetails: {}
       });
 
-      window.open(whatsappUrl, '_blank');
-      clearCart();
-      setStep('concluded');
+      if (result.success) {
+        window.open(whatsappUrl, '_blank');
+        clearCart();
+        setStep('concluded');
+      } else {
+        setError(result.error || 'Ocorreu um erro ao processar seu pedido. Por favor, tente novamente.');
+      }
     } catch (err) {
       console.error('Error creating order:', err);
-      setError('Ocorreu um erro ao processar seu pedido. Por favor, tente novamente.');
+      setError('Ocorreu um erro inesperado ao processar seu pedido.');
     } finally {
       setLoading(false);
     }
@@ -186,6 +262,25 @@ const Checkout = () => {
                     />
                   </div>
                   <div className="md:col-span-2">
+                    <div className="relative">
+                      <label className="text-[9px] uppercase tracking-widest text-navy font-bold block mb-2">CEP</label>
+                      <input
+                        type="text"
+                        name="zipCode"
+                        value={shippingAddress.zipCode}
+                        onChange={handleAddressChange}
+                        placeholder="00000-000"
+                        className="w-full border-b border-navy/20 bg-navy/[0.02] py-2 text-sm focus:outline-none focus:border-navy"
+                      />
+                      {isSearchingCEP && (
+                        <span className="absolute right-0 bottom-10 text-[8px] text-navy animate-pulse uppercase tracking-widest font-bold">Buscando...</span>
+                      )}
+                      <p className="text-[9px] text-navy/40 mt-2 uppercase tracking-widest font-medium italic">
+                        * Preencha o CEP para completar os outros campos automaticamente
+                      </p>
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
                     <label className="text-[9px] uppercase tracking-widest text-gray-400 block mb-2">Rua / Logradouro</label>
                     <input
                       type="text"
@@ -226,16 +321,6 @@ const Checkout = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-[9px] uppercase tracking-widest text-gray-400 block mb-2">CEP</label>
-                    <input
-                      type="text"
-                      name="zipCode"
-                      value={shippingAddress.zipCode}
-                      onChange={handleAddressChange}
-                      className="w-full border-b border-gray-100 py-2 text-sm focus:outline-none focus:border-navy"
-                    />
-                  </div>
-                  <div>
                     <label className="text-[9px] uppercase tracking-widest text-gray-400 block mb-2">Cidade</label>
                     <input
                       type="text"
@@ -267,6 +352,59 @@ const Checkout = () => {
                 </div>
               )}
             </div>
+
+            {/* Additional Info (Missing Profile Fields) */}
+            {user && (!user.phone || !user.cpf || !user.birthDate) && (
+              <div className="bg-white p-10 shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-10 border-b border-gray-100 pb-6">
+                  <h3 className="text-[10px] tracking-[0.4em] uppercase font-bold text-navy">Informações Complementares</h3>
+                  <span className="text-[9px] text-navy/40 font-bold uppercase tracking-widest bg-gray-50 px-3 py-1 italic">Conclusão de Perfil</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {!user.phone && (
+                    <div>
+                      <label className="text-[9px] uppercase tracking-widest text-gray-400 block mb-2 font-bold">Telefone</label>
+                      <input
+                        type="text"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        placeholder="(00) 00000-0000"
+                        className="w-full border-b border-gray-100 py-2 text-sm focus:outline-none focus:border-navy"
+                        required
+                      />
+                    </div>
+                  )}
+                  {!user.cpf && (
+                    <div>
+                      <label className="text-[9px] uppercase tracking-widest text-gray-400 block mb-2 font-bold">CPF</label>
+                      <input
+                        type="text"
+                        name="cpf"
+                        value={formData.cpf}
+                        onChange={handleInputChange}
+                        placeholder="000.000.000-00"
+                        className="w-full border-b border-gray-100 py-2 text-sm focus:outline-none focus:border-navy"
+                        required
+                      />
+                    </div>
+                  )}
+                  {!user.birthDate && (
+                    <div className="md:col-span-2">
+                      <label className="text-[9px] uppercase tracking-widest text-gray-400 block mb-2 font-bold">Data de Nascimento</label>
+                      <input
+                        type="date"
+                        name="birthDate"
+                        value={formData.birthDate}
+                        onChange={handleInputChange}
+                        className="w-full border-b border-gray-100 py-2 text-sm focus:outline-none focus:border-navy text-gray-400"
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Gift Options */}
             <div className="bg-white p-10 shadow-sm border border-gray-100">

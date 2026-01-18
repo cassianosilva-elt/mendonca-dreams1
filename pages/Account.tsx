@@ -166,7 +166,7 @@ const OrdersContent = ({ navigate, orders, isLoading }: { navigate: any, orders:
           onClick={() => navigate('/colecoes')}
           className="bg-navy text-white px-10 py-4 text-[11px] tracking-[0.3em] font-bold uppercase hover:bg-navy/90 transition-all"
         >
-          Explorar Maison
+          Explorar Mendonça Dreams
         </button>
       </div>
     );
@@ -390,17 +390,29 @@ const UserDataForm = ({ user, updateProfile }: { user: User | null, updateProfil
         <h3 className="text-xl font-serif text-navy mb-8 italic">Endereço de Entrega</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
+            <div className="relative">
+              <Input
+                label="CEP"
+                name="address.zipCode"
+                value={formData.address.zipCode}
+                onChange={handleChange}
+                placeholder="00000-000"
+                className="bg-navy/[0.02] border-navy/20"
+              />
+              {isSearchingCEP && (
+                <span className="absolute right-0 bottom-10 text-[8px] text-navy animate-pulse uppercase tracking-widest font-bold">Buscando...</span>
+              )}
+              <p className="text-[9px] text-navy/40 mt-2 uppercase tracking-widest font-medium italic">
+                * Preencha o CEP para completar os outros campos automaticamente
+              </p>
+            </div>
+          </div>
+          <div className="md:col-span-2">
             <Input label="Rua / Logradouro" name="address.street" value={formData.address.street} onChange={handleChange} />
           </div>
           <Input label="Número" name="address.number" value={formData.address.number} onChange={handleChange} />
           <Input label="Complemento" name="address.complement" value={formData.address.complement} onChange={handleChange} />
           <Input label="Bairro" name="address.neighborhood" value={formData.address.neighborhood} onChange={handleChange} />
-          <div className="relative">
-            <Input label="CEP" name="address.zipCode" value={formData.address.zipCode} onChange={handleChange} placeholder="00000-000" />
-            {isSearchingCEP && (
-              <span className="absolute right-0 bottom-3 text-[8px] text-navy animate-pulse uppercase tracking-widest font-bold">Buscando...</span>
-            )}
-          </div>
           <Input label="Cidade" name="address.city" value={formData.address.city} onChange={handleChange} />
           <Input label="Estado" name="address.state" value={formData.address.state} onChange={handleChange} />
         </div>
@@ -448,7 +460,7 @@ const PreferencesForm = ({ user, updateProfile }: { user: User | null, updatePro
     <div className="space-y-12">
       <div>
         <h3 className="text-xl font-serif text-navy mb-8 italic">Identidade</h3>
-        <p className="text-gray-400 text-sm mb-8 font-light">Como você prefere ser identificada na Maison.</p>
+        <p className="text-gray-400 text-sm mb-8 font-light">Como você prefere ser identificada na Mendonça Dreams.</p>
         <div className="flex gap-4">
           <button
             onClick={() => handleGenderChange('female')}
@@ -479,7 +491,7 @@ const PreferencesForm = ({ user, updateProfile }: { user: User | null, updatePro
 
       <div>
         <h3 className="text-xl font-serif text-navy mb-8 italic">Curadoria de Estilo</h3>
-        <p className="text-gray-400 text-sm mb-8 font-light">Selecione seu estilo predominante para uma experiência personalizada na Maison.</p>
+        <p className="text-gray-400 text-sm mb-8 font-light">Selecione seu estilo predominante para uma experiência personalizada na Mendonça Dreams.</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {['Classic', 'Modern', 'Avant-garde', 'Minimalist'].map(style => (
             <button
@@ -499,12 +511,12 @@ const PreferencesForm = ({ user, updateProfile }: { user: User | null, updatePro
 
 /* --- UI Components --- */
 
-const Input = ({ label, ...props }: any) => (
+const Input = ({ label, className = '', ...props }: any) => (
   <div className="flex flex-col space-y-2">
     <label className="text-[10px] tracking-[0.2em] font-bold uppercase text-navy/60">{label}</label>
     <input
       {...props}
-      className="border-b border-gray-200 py-3 text-sm focus:border-navy outline-none transition-colors bg-transparent placeholder:text-gray-300"
+      className={`border-b border-gray-200 py-3 text-sm focus:border-navy outline-none transition-colors bg-transparent placeholder:text-gray-300 ${className}`}
     />
   </div>
 );

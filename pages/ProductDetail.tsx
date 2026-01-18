@@ -50,7 +50,7 @@ const ProductDetail: React.FC = () => {
 
   const isCurrentVariantInStock = checkStock(selectedSize, selectedColor);
 
-  if (!product) return <div className="py-40 text-center font-serif text-navy">Produto não encontrado na Maison.</div>;
+  if (!product) return <div className="py-40 text-center font-serif text-navy">Produto não encontrado.</div>;
 
   const sameCategory = products.filter(p => p.category === product.category && p.id !== product.id);
   const otherProducts = products.filter(p => p.category !== product.category && p.id !== product.id);
@@ -92,26 +92,51 @@ const ProductDetail: React.FC = () => {
           <span className="text-navy font-bold">{product.name}</span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 mb-32">
-          <div className="flex flex-col-reverse lg:flex-row gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 mb-32 items-start">
+          <div className="flex flex-col-reverse lg:flex-row gap-6 items-start">
             <div className="flex lg:flex-col gap-4 overflow-x-auto hide-scrollbar">
               {product.images.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setSelectedImage(idx)}
-                  className={`flex-shrink-0 w-20 h-24 border-2 transition-all ${selectedImage === idx ? 'border-navy' : 'border-transparent opacity-60'}`}
+                  className={`flex-shrink-0 w-24 border transition-all ${selectedImage === idx ? 'border-navy' : 'border-gray-100 opacity-60 hover:opacity-100'}`}
                 >
-                  <OptimizedImage src={img} alt="" className="w-full h-full object-cover" />
+                  <OptimizedImage src={img} alt="" className="w-full object-cover" style={{ aspectRatio: '3/4' }} />
                 </button>
               ))}
             </div>
-            <div className="flex-1 aspect-[3/4] overflow-hidden bg-gray-50 relative group">
-              <OptimizedImage
-                src={product.images[selectedImage]}
-                alt={product.name}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                priority={true}
-              />
+            <div className="flex-1 overflow-hidden bg-gray-50 relative group">
+              {product.videoUrl ? (
+                <div className="w-full h-full">
+                  {product.videoUrl.includes('youtube.com') || product.videoUrl.includes('youtu.be') || product.videoUrl.includes('vimeo.com') ? (
+                    <iframe
+                      src={product.videoUrl.includes('youtube.com') || product.videoUrl.includes('youtu.be')
+                        ? `https://www.youtube.com/embed/${product.videoUrl.split('v=')[1] || product.videoUrl.split('/').pop()}`
+                        : `https://player.vimeo.com/video/${product.videoUrl.split('/').pop()}`}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  ) : (
+                    <video
+                      src={product.videoUrl}
+                      className="w-full h-full object-cover"
+                      controls
+                      autoPlay
+                      muted
+                      loop
+                    ></video>
+                  )}
+                </div>
+              ) : (
+                <OptimizedImage
+                  src={product.images[selectedImage]}
+                  alt={product.name}
+                  className="w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  priority={true}
+                  style={{ aspectRatio: '3/4' }}
+                />
+              )}
             </div>
           </div>
 
@@ -253,7 +278,7 @@ const ProductDetail: React.FC = () => {
         <section className="mt-40 border-t border-gray-50 pt-32">
           <div className="text-center mb-20">
             <span className="text-navy/40 text-[9px] tracking-[0.5em] uppercase mb-4 block font-bold italic">Curadoria Especial</span>
-            <h2 className="text-4xl md:text-5xl font-serif text-navy italic">Mais da Coleção Maison</h2>
+            <h2 className="text-4xl md:text-5xl font-serif text-navy italic">Mais da Coleção</h2>
             <div className="w-12 h-px bg-navy/20 mx-auto mt-8"></div>
           </div>
 

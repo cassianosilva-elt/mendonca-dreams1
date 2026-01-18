@@ -61,7 +61,7 @@ const Navbar: React.FC = () => {
             {isAdmin && (
               <Link
                 to="/admin"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-navy/10 hover:bg-navy hover:text-white text-navy rounded-full transition-all text-[10px] tracking-wider font-semibold border border-navy/20"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-navy/10 hover:bg-white hover:text-white text-white rounded-full transition-all text-[10px] tracking-wider font-semibold border border-navy/20"
                 title="Painel Admin"
               >
                 <Shield size={14} />

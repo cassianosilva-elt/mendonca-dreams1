@@ -29,7 +29,14 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
     // const srcSet = ...
 
     return (
-        <div className={`relative overflow-hidden bg-gray-100 ${className}`} style={{ width, height }}>
+        <div
+            className={`relative overflow-hidden bg-gray-100 ${className}`}
+            style={{
+                width,
+                height,
+                aspectRatio: props.style?.aspectRatio || undefined // Allow override via style or future prop
+            }}
+        >
             {/* Blur Placeholder Effect (fades out when loaded) */}
             {!isLoaded && !hasError && (
                 <div className="absolute inset-0 bg-gray-200 animate-pulse z-10" />

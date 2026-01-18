@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Eye, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import DataTable from '../../components/admin/DataTable';
-import { getOrders, updateOrderStatus } from '../../services/admin';
+import { getOrders, updateOrderStatus, deleteOrder } from '../../services/admin';
 import { Order } from '../../types';
 import { IS_MOCK_MODE } from '../../services/supabase';
 
 const statusLabels: Record<Order['status'], string> = {
-    pending: 'Pendente',
-    processing: 'Processando',
+    pending: 'Aguardando Pagamento',
+    processing: 'Pagamento Confirmado',
     shipped: 'Enviado',
     delivered: 'Entregue',
     cancelled: 'Cancelado',
@@ -16,9 +16,9 @@ const statusLabels: Record<Order['status'], string> = {
 
 const statusColors: Record<Order['status'], string> = {
     pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    processing: 'bg-blue-100 text-blue-800 border-blue-200',
-    shipped: 'bg-purple-100 text-purple-800 border-purple-200',
-    delivered: 'bg-green-100 text-green-800 border-green-200',
+    processing: 'bg-green-100 text-green-800 border-green-200',
+    shipped: 'bg-blue-100 text-blue-800 border-blue-200',
+    delivered: 'bg-navy/10 text-navy border-navy/20',
     cancelled: 'bg-red-100 text-red-800 border-red-200',
 };
 
@@ -39,11 +39,20 @@ const OrderManagement: React.FC = () => {
         filterOrders();
     }, [orders, searchTerm, statusFilter]);
 
+    const [error, setError] = useState<string | null>(null);
+
     const fetchOrders = async () => {
         setIsLoading(true);
-        const data = await getOrders();
-        setOrders(data);
-        setIsLoading(false);
+        setError(null);
+        try {
+            const data = await getOrders();
+            setOrders(data);
+        } catch (err: any) {
+            console.error('Error in fetchOrders:', err);
+            setError(err.message || 'Erro ao carregar pedidos');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const filterOrders = () => {
@@ -83,6 +92,29 @@ const OrderManagement: React.FC = () => {
             );
         } else {
             alert('Erro ao atualizar status do pedido');
+        }
+
+        setUpdatingOrderId(null);
+    };
+
+    const handleDeleteOrder = async (orderId: string) => {
+        if (IS_MOCK_MODE) {
+            alert('Não é possível excluir em modo demonstração');
+            return;
+        }
+
+        if (!confirm('Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita.')) {
+            return;
+        }
+
+        setUpdatingOrderId(orderId);
+        const success = await deleteOrder(orderId);
+
+        if (success) {
+            setOrders((prev) => prev.filter((order) => order.id !== orderId));
+            setExpandedOrder(null);
+        } else {
+            alert('Erro ao excluir pedido');
         }
 
         setUpdatingOrderId(null);
@@ -183,6 +215,12 @@ const OrderManagement: React.FC = () => {
                     </div>
                 )}
 
+                {error && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+                        ❌ Erro ao buscar pedidos: {error}
+                    </div>
+                )}
+
                 {/* Filters */}
                 <div className="flex flex-col sm:flex-row gap-4">
                     <div className="relative flex-1">
@@ -276,6 +314,74 @@ const OrderManagement: React.FC = () => {
                                                     {order.shippingAddress.neighborhood} - {order.shippingAddress.city}/{order.shippingAddress.state}
                                                 </p>
                                                 <p className="text-gray-600">CEP: {order.shippingAddress.zipCode}</p>
+                                            </div>
+
+                                            {/* Quick Actions */}
+                                            <div className="md:col-span-2 border-t pt-4">
+                                                <h4 className="font-medium text-gray-900 mb-3">Ações Rápidas</h4>
+                                                <div className="flex flex-wrap gap-3">
+                                                    {order.status === 'pending' && (
+                                                        <button
+                                                            onClick={() => handleStatusChange(order.id, 'processing')}
+                                                            disabled={updatingOrderId === order.id}
+                                                            className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                                                        >
+                                                            Confirmar Pagamento
+                                                        </button>
+                                                    )}
+                                                    {order.status === 'processing' && (
+                                                        <button
+                                                            onClick={() => handleStatusChange(order.id, 'shipped')}
+                                                            disabled={updatingOrderId === order.id}
+                                                            className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                                        >
+                                                            Marcar como Enviado
+                                                        </button>
+                                                    )}
+                                                    {order.status === 'shipped' && (
+                                                        <button
+                                                            onClick={() => handleStatusChange(order.id, 'delivered')}
+                                                            disabled={updatingOrderId === order.id}
+                                                            className="px-4 py-2 bg-navy text-white text-xs font-bold rounded-lg hover:bg-navy/90 transition-colors flex items-center gap-2"
+                                                        >
+                                                            Confirmar Entrega
+                                                        </button>
+                                                    )}
+                                                    {order.status !== 'cancelled' && order.status !== 'delivered' && (
+                                                        <button
+                                                            onClick={() => handleStatusChange(order.id, 'cancelled')}
+                                                            disabled={updatingOrderId === order.id}
+                                                            className="px-4 py-2 bg-white text-red-600 border border-red-200 text-xs font-bold rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2"
+                                                        >
+                                                            Cancelar Pedido
+                                                        </button>
+                                                    )}
+                                                    {(() => {
+                                                        const phone = (order.userPhone || (order.shippingAddress as any).phone || '').replace(/\D/g, '');
+                                                        const whatsappUrl = phone ? `https://wa.me/${phone.length <= 11 ? '55' : ''}${phone}` : null;
+
+                                                        if (!whatsappUrl) return null;
+
+                                                        return (
+                                                            <a
+                                                                href={whatsappUrl}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="px-4 py-2 bg-green-500 text-white text-xs font-bold rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+                                                            >
+                                                                Falar com Cliente (WhatsApp)
+                                                            </a>
+                                                        );
+                                                    })()}
+                                                    <button
+                                                        onClick={() => handleDeleteOrder(order.id)}
+                                                        disabled={updatingOrderId === order.id}
+                                                        className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                        Excluir Pedido
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
 

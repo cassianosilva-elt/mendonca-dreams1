@@ -69,21 +69,47 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             quantity: item.quantity
           }));
 
-          // Merge local cart with DB cart (simple strategy: DB wins or union?)
-          // For simplicity: DB wins if exists, otherwise keep local until first save.
-          // Better: If DB empty and Local has items, push Local to DB.
+          // Merge local cart with DB cart
           if (dbItems.length > 0) {
             setCart(dbItems);
           } else if (cart.length > 0) {
             // Push local items to DB
             for (const item of cart) {
-              await supabase.from('cart_items').insert({
-                cart_id: cartData.id,
-                product_id: item.id,
-                size: item.selectedSize,
-                color: item.selectedColor,
-                quantity: item.quantity
-              });
+              // First, check if the product exists in the database (avoid FK violation)
+              const { data: productExists } = await supabase
+                .from('products')
+                .select('id')
+                .eq('id', item.id)
+                .maybeSingle();
+
+              if (!productExists) {
+                // Product doesn't exist in DB (it's a generic/mock product), skip syncing this item
+                console.log('Skipping sync for cart item with non-DB product:', item.id);
+                continue;
+              }
+
+              const { data: existing } = await supabase
+                .from('cart_items')
+                .select('id')
+                .eq('cart_id', cartData.id)
+                .eq('product_id', item.id)
+                .eq('size', item.selectedSize)
+                .eq('color', item.selectedColor)
+                .maybeSingle();
+
+              if (!existing) {
+                const { error } = await supabase.from('cart_items').insert({
+                  cart_id: cartData.id,
+                  product_id: item.id,
+                  size: item.selectedSize,
+                  color: item.selectedColor,
+                  quantity: item.quantity
+                });
+                // Ignore unique violation if race condition occurs
+                if (error && error.code !== '23505') {
+                  console.error('Error syncing cart item:', error);
+                }
+              }
             }
           }
         }
@@ -113,11 +139,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (user && !IS_MOCK_MODE) {
+      // Check if product exists in DB first (avoid FK violation with generic products)
+      const { data: productExists } = await supabase
+        .from('products')
+        .select('id')
+        .eq('id', product.id)
+        .maybeSingle();
+
+      if (!productExists) {
+        // Product is not in DB (generic/mock product), skip DB sync
+        console.log('Skipping DB sync for non-DB product:', product.id);
+        return;
+      }
+
       // Sync to DB
       const { data: cartData } = await supabase.from('carts').select('id').eq('user_id', user.id).single();
       if (cartData) {
-        // Check existence in DB first to update vs insert
-        // Upsert on specific conflict constraint would be better
         const { data: existingItem } = await supabase
           .from('cart_items')
           .select('*')
@@ -125,18 +162,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('product_id', product.id)
           .eq('size', size)
           .eq('color', color)
-          .single();
+          .maybeSingle();
 
         if (existingItem) {
           await supabase.from('cart_items').update({ quantity: existingItem.quantity + 1 }).eq('id', existingItem.id);
         } else {
-          await supabase.from('cart_items').insert({
+          // Try to insert. If race condition causes 409, we swallow it since item exists.
+          const { error } = await supabase.from('cart_items').insert({
             cart_id: cartData.id,
             product_id: product.id,
             size: size,
             color: color,
             quantity: 1
           });
+
+          if (error && error.code !== '23505') { // Ignore unique_violation, log others
+            console.error('Error adding to cart:', error);
+          }
         }
       }
     }

@@ -94,8 +94,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         phone: profile?.phone,
         cpf: profile?.cpf,
         birthDate: profile?.birth_date,
-        address: profile?.address,
-        preferences: profile?.preferences,
+        gender: profile?.gender,
+        shoppingFor: profile?.shopping_for,
+        address: profile?.address as any,
+        preferences: profile?.preferences as any,
       });
 
       // Set admin status
@@ -219,8 +221,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           birth_date: updates.birthDate,
           gender: updates.gender,
           shopping_for: updates.shoppingFor,
-          address: updates.address,
-          preferences: updates.preferences,
+          address: updates.address as any,
+          preferences: updates.preferences as any,
         })
         .eq('id', user?.id);
 

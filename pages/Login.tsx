@@ -66,7 +66,7 @@ const Login: React.FC = () => {
       <div className="container mx-auto px-6">
         <div className="max-w-md mx-auto bg-white p-12 shadow-2xl rounded-sm">
           <div className="text-center mb-12">
-            <h1 className="text-3xl font-serif text-navy mb-4">Maison Mendonça</h1>
+            <h1 className="text-3xl font-serif text-navy mb-4">Mendonça Dreams</h1>
             <p className="text-[10px] tracking-[0.3em] uppercase text-gray-400">
               {isSignUp ? 'Crie sua conta exclusiva' : 'Acesso à conta exclusiva'}
             </p>
@@ -172,8 +172,8 @@ const Login: React.FC = () => {
                           type="button"
                           onClick={() => setGender(gender === 'female' ? '' : 'female')}
                           className={`flex-1 py-3 px-4 border-2 text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${gender === 'female'
-                              ? 'border-navy bg-navy text-white'
-                              : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                            ? 'border-navy bg-navy text-white'
+                            : 'border-gray-200 text-gray-500 hover:border-gray-300'
                             }`}
                         >
                           <Heart size={14} />
@@ -183,8 +183,8 @@ const Login: React.FC = () => {
                           type="button"
                           onClick={() => setGender(gender === 'male' ? '' : 'male')}
                           className={`flex-1 py-3 px-4 border-2 text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${gender === 'male'
-                              ? 'border-navy bg-navy text-white'
-                              : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                            ? 'border-navy bg-navy text-white'
+                            : 'border-gray-200 text-gray-500 hover:border-gray-300'
                             }`}
                         >
                           <User size={14} />
@@ -203,8 +203,8 @@ const Login: React.FC = () => {
                           type="button"
                           onClick={() => setShoppingFor(shoppingFor === 'self' ? '' : 'self')}
                           className={`flex-1 py-3 px-4 border-2 text-[10px] uppercase tracking-widest font-bold transition-all ${shoppingFor === 'self'
-                              ? 'border-navy bg-navy text-white'
-                              : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                            ? 'border-navy bg-navy text-white'
+                            : 'border-gray-200 text-gray-500 hover:border-gray-300'
                             }`}
                         >
                           Para mim
@@ -213,8 +213,8 @@ const Login: React.FC = () => {
                           type="button"
                           onClick={() => setShoppingFor(shoppingFor === 'gift' ? '' : 'gift')}
                           className={`flex-1 py-3 px-4 border-2 text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${shoppingFor === 'gift'
-                              ? 'border-navy bg-navy text-white'
-                              : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                            ? 'border-navy bg-navy text-white'
+                            : 'border-gray-200 text-gray-500 hover:border-gray-300'
                             }`}
                         >
                           <Gift size={14} />
@@ -235,7 +235,7 @@ const Login: React.FC = () => {
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                isSignUp ? 'Criar minha conta' : 'Entrar na Maison'
+                isSignUp ? 'Criar minha conta' : 'Entrar na Mendonça Dreams'
               )}
             </button>
           </form>

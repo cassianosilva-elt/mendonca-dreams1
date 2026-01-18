@@ -4,9 +4,9 @@ import { PRODUCTS } from '../constants';
 
 // Mock data for admin functionality when Supabase is not configured
 const MOCK_USERS: User[] = [
-    { id: '1', name: 'Admin User', email: 'admin@mendonca.com', isAdmin: true },
-    { id: '2', name: 'Maria Silva', email: 'maria@email.com', isAdmin: false },
-    { id: '3', name: 'João Santos', email: 'joao@email.com', isAdmin: false },
+    { id: '1', name: 'Admin User', email: 'admin@mendonca.com', isAdmin: true, phone: '11999999999' },
+    { id: '2', name: 'Maria Silva', email: 'maria@email.com', isAdmin: false, phone: '11988888888' },
+    { id: '3', name: 'João Santos', email: 'joao@email.com', isAdmin: false, phone: '11977777777' },
 ];
 
 const MOCK_ORDERS: Order[] = [
@@ -25,6 +25,7 @@ const MOCK_ORDERS: Order[] = [
             state: 'SP',
             zipCode: '01234-567',
         },
+        userPhone: '11988888888',
         items: [
             { productId: '1', productName: 'Blazer Estruturado Navy Royal', quantity: 1, size: '40', color: 'Navy', price: 1290 },
             { productId: '2', productName: 'Calça Pantalona em Crepe', quantity: 1, size: 'M', color: 'Off-White', price: 850 },
@@ -47,6 +48,7 @@ const MOCK_ORDERS: Order[] = [
             state: 'SP',
             zipCode: '01310-100',
         },
+        userPhone: '11999999999',
         items: [
             { productId: '3', productName: 'Camisa de Seda Pura Branca', quantity: 1, size: '40', color: 'Branco', price: 720 },
         ],
@@ -84,6 +86,31 @@ export const checkIsAdmin = async (userId: string): Promise<boolean> => {
     }
 };
 
+// Helper to manage deleted generic products in LocalStorage
+const getDeletedGenericSlugs = (): string[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+        const stored = localStorage.getItem('deleted_generic_slugs');
+        return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+        console.warn('Error reading deleted generic slugs from LocalStorage', e);
+        return [];
+    }
+};
+
+const saveDeletedGenericSlug = (slug: string) => {
+    if (typeof window === 'undefined') return;
+    try {
+        const current = getDeletedGenericSlugs();
+        if (!current.includes(slug)) {
+            const updated = [...current, slug];
+            localStorage.setItem('deleted_generic_slugs', JSON.stringify(updated));
+        }
+    } catch (e) {
+        console.warn('Error saving deleted generic slug to LocalStorage', e);
+    }
+};
+
 // Products
 export const getProducts = async (): Promise<Product[]> => {
     if (IS_MOCK_MODE) return PRODUCTS;
@@ -108,11 +135,15 @@ export const getProducts = async (): Promise<Product[]> => {
             composition: item.composition,
             sizes: item.sizes,
             colors: item.colors as { name: string; hex: string }[],
+            videoUrl: item.video_url,
         })) || [];
 
         // Merge logic: Show all DB products + any generic products that don't share a slug with a DB product
+        // AND have not been "deleted" locally
         const dbSlugs = new Set(dbProducts.map(p => p.slug));
-        const genericProducts = PRODUCTS.filter(p => !dbSlugs.has(p.slug));
+        const deletedSlugs = new Set(getDeletedGenericSlugs());
+
+        const genericProducts = PRODUCTS.filter(p => !dbSlugs.has(p.slug) && !deletedSlugs.has(p.slug));
 
         return [...dbProducts, ...genericProducts];
     } catch (error) {
@@ -153,6 +184,7 @@ export const importGenericProducts = async (): Promise<{ success: boolean; count
                 composition: p.composition,
                 sizes: p.sizes,
                 colors: p.colors,
+                video_url: p.videoUrl,
             })));
 
         if (error) throw error;
@@ -183,6 +215,7 @@ export const createProduct = async (productData: ProductFormData): Promise<Produ
                 composition: productData.composition,
                 sizes: productData.sizes,
                 colors: productData.colors,
+                video_url: productData.videoUrl,
             })
             .select()
             .single();
@@ -213,6 +246,7 @@ export const createProduct = async (productData: ProductFormData): Promise<Produ
             composition: data.composition,
             sizes: data.sizes,
             colors: data.colors as { name: string; hex: string }[],
+            videoUrl: data.video_url,
         } : null;
     } catch (error) {
         console.error('Error creating product:', error);
@@ -240,6 +274,7 @@ export const updateProduct = async (id: string, productData: Partial<ProductForm
                 composition: productData.composition,
                 sizes: productData.sizes,
                 colors: productData.colors,
+                video_url: productData.videoUrl,
             })
             .eq('id', id);
 
@@ -251,23 +286,111 @@ export const updateProduct = async (id: string, productData: Partial<ProductForm
     }
 };
 
-export const deleteProduct = async (id: string): Promise<boolean> => {
+export const deleteProduct = async (id: string): Promise<{ success: boolean; error?: string }> => {
     if (IS_MOCK_MODE) {
         console.warn('Cannot delete product in mock mode');
-        return false;
+        return { success: false, error: 'Não é possível excluir em modo demonstração.' };
     }
 
     try {
+        console.log('Attempting to delete product:', id);
+
+        // Check if it's a generic product (id < 10 or likely not UUID)
+        // Or if it simply doesn't exist in the DB (we'll check via select or handle error)
+        // But first, standard DB checks.
+
+        // 1. Check if product has any orders in DB. 
+        // Note: For generic products that are NOT in DB, this will return 0 count comfortably or fail if invalid ID syntax (if UUID expected).
+        // If "id" is "1", "2" etc, Supabase might error if expecting UUID.
+
+        let isGeneric = false;
+        // Generic IDs are typically "1", "2", etc.
+        if (!id.includes('-') && id.length < 10) {
+            isGeneric = true;
+        }
+
+        if (isGeneric) {
+            // For generic products, we find the slug to "hide" it.
+            const genericProduct = PRODUCTS.find(p => p.id === id);
+            if (genericProduct) {
+                saveDeletedGenericSlug(genericProduct.slug);
+                console.log('Generic product hidden via LocalStorage:', genericProduct.slug);
+                return { success: true };
+            } else {
+                return { success: false, error: 'Produto genérico não encontrado.' };
+            }
+        }
+
+        const { count, error: countError } = await supabase
+            .from('order_items')
+            .select('id', { count: 'exact', head: true })
+            .eq('product_id', id);
+
+        if (countError) {
+            // If error is invalid input syntax for type uuid, it might be a generic product ID that somehow got here not caught by regex?
+            // But we caught basic ones above. Let's proceed.
+            throw countError;
+        }
+
+        if (count && count > 0) {
+            return {
+                success: false,
+                error: 'Este produto possui histórico de pedidos e não pode ser excluído. Em vez disso, oculte-o do site ou refine sua descrição.'
+            };
+        }
+
+        // 2. Delete related inventory records
+        const { error: invError } = await supabase
+            .from('inventory')
+            .delete()
+            .eq('product_id', id);
+
+        if (invError) {
+            console.error('Error deleting product inventory:', invError);
+            throw invError;
+        }
+
+        // 3. Delete related reviews
+        const { error: reviewsError } = await supabase
+            .from('reviews')
+            .delete()
+            .eq('product_id', id);
+
+        if (reviewsError) {
+            console.warn('Could not delete product reviews:', reviewsError);
+            // We continue as reviews are not critical
+        }
+
+        // 4. Delete from cart_items
+        const { error: cartError } = await supabase
+            .from('cart_items')
+            .delete()
+            .eq('product_id', id);
+
+        if (cartError) {
+            console.warn('Could not delete from cart items:', cartError);
+        }
+
+        // 5. Finally, delete the product
         const { error } = await supabase
             .from('products')
             .delete()
             .eq('id', id);
 
-        if (error) throw error;
-        return true;
-    } catch (error) {
+        if (error) {
+            // Attempt to handle case where it might be a generic product that was imported?
+            // If row not found, maybe it was never imported?
+            throw error;
+        }
+
+        console.log('Product deleted successfully');
+        return { success: true };
+    } catch (error: any) {
         console.error('Error deleting product:', error);
-        return false;
+        return {
+            success: false,
+            error: error.message || 'Erro inesperado ao excluir o produto.'
+        };
     }
 };
 
@@ -320,38 +443,65 @@ export const getOrders = async (): Promise<Order[]> => {
     if (IS_MOCK_MODE) return MOCK_ORDERS;
 
     try {
-        const { data: orders, error } = await supabase
+        console.log('Fetching orders from Supabase...', { IS_MOCK_MODE });
+
+        // 1. Fetch Orders and Items
+        const { data: ordersData, error: ordersError } = await supabase
             .from('orders')
-            .select(`
-        *,
-        profiles:user_id (full_name, email),
-        order_items (*)
-      `)
+            .select('*, order_items(*)')
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (ordersError) {
+            console.error('Supabase error fetching orders:', ordersError);
+            throw ordersError;
+        }
 
-        return orders?.map(order => ({
-            id: order.id,
-            userId: order.user_id,
-            userName: (order.profiles as any)?.full_name || 'Usuário',
-            userEmail: (order.profiles as any)?.email || '',
-            status: order.status as Order['status'],
-            total: order.total,
-            shippingAddress: order.shipping_address as Order['shippingAddress'],
-            items: (order.order_items || []).map((item: any) => ({
-                productId: item.product_id,
-                productName: item.product_name,
-                quantity: item.quantity,
-                size: item.size,
-                color: item.color,
-                price: item.price,
-            })),
-            stripePaymentId: order.stripe_payment_id || undefined,
-            createdAt: order.created_at,
-        })) || [];
-    } catch (error) {
-        console.error('Error fetching orders:', error);
+        if (!ordersData || ordersData.length === 0) {
+            console.log('No orders found in database.');
+            return [];
+        }
+
+        // 2. Fetch Profiles for these orders
+        const userIds = [...new Set(ordersData.map(o => o.user_id))];
+        const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, full_name, email, phone')
+            .in('id', userIds);
+
+        if (profilesError) {
+            console.warn('Could not fetch profiles for orders:', profilesError);
+            // We continue even if profiles fail, showing "Usuário" as fallback
+        }
+
+        const profilesMap = new Map((profilesData || []).map(p => [p.id, p]));
+
+        console.log(`Fetched ${ordersData.length} orders and ${profilesData?.length || 0} profiles`);
+
+        return ordersData.map(order => {
+            const profile = profilesMap.get(order.user_id);
+            return {
+                id: order.id,
+                userId: order.user_id,
+                userName: profile?.full_name || 'Usuário',
+                userEmail: profile?.email || '',
+                userPhone: profile?.phone || '',
+                status: order.status as Order['status'],
+                total: order.total,
+                shippingAddress: order.shipping_address as Order['shippingAddress'],
+                items: (order.order_items || []).map((item: any) => ({
+                    productId: item.product_id,
+                    productName: item.product_name,
+                    quantity: item.quantity,
+                    size: item.size,
+                    color: item.color,
+                    price: item.price,
+                })),
+                stripePaymentId: order.stripe_payment_id || undefined,
+                createdAt: order.created_at,
+            };
+        });
+    } catch (error: any) {
+        console.error('Final error in getOrders:', error);
         return [];
     }
 };
@@ -363,15 +513,83 @@ export const updateOrderStatus = async (orderId: string, status: Order['status']
     }
 
     try {
-        const { error } = await supabase
+        console.log('Attempting status update in database:', { orderId, status });
+
+        // Update the order
+        const { data, error } = await supabase
             .from('orders')
             .update({ status })
+            .eq('id', orderId)
+            .select();
+
+        if (error) {
+            console.error('Supabase error during update:', error);
+            throw error;
+        }
+
+        // If data is empty, the update didn't affect any rows
+        if (!data || data.length === 0) {
+            console.warn('Update affected 0 rows. Checking if row exists...');
+
+            // Check if row actually exists
+            const { data: exists } = await supabase
+                .from('orders')
+                .select('id')
+                .eq('id', orderId);
+
+            if (exists && exists.length > 0) {
+                console.error('ROW EXISTS BUT UPDATE FAILED. This is a clear RLS (Row Level Security) block.');
+                throw new Error('Permissão negada no banco de dados. O administrador não tem permissão para atualizar os pedidos (RLS Policy).');
+            } else {
+                console.error('ROW DOES NOT EXIST. The ID might be wrong.');
+                throw new Error('Pedido não encontrado no banco de dados.');
+            }
+        }
+
+        console.log('Status updated successfully in DB:', data[0]);
+        return true;
+    } catch (error: any) {
+        console.error('Final updateOrderStatus error:', error);
+        alert(`Erro ao salvar: ${error.message || 'Erro desconhecido'}`);
+        return false;
+    }
+};
+
+export const deleteOrder = async (orderId: string): Promise<boolean> => {
+    if (IS_MOCK_MODE) {
+        console.warn('Cannot delete order in mock mode');
+        return false;
+    }
+
+    try {
+        console.log('Deleting order:', orderId);
+
+        // First delete order items (due to foreign key constraint)
+        const { error: itemsError } = await supabase
+            .from('order_items')
+            .delete()
+            .eq('order_id', orderId);
+
+        if (itemsError) {
+            console.error('Error deleting order items:', itemsError);
+            throw itemsError;
+        }
+
+        // Then delete the order itself
+        const { error: orderError } = await supabase
+            .from('orders')
+            .delete()
             .eq('id', orderId);
 
-        if (error) throw error;
+        if (orderError) {
+            console.error('Error deleting order:', orderError);
+            throw orderError;
+        }
+
+        console.log('Order deleted successfully');
         return true;
     } catch (error) {
-        console.error('Error updating order status:', error);
+        console.error('Error deleting order:', error);
         return false;
     }
 };
@@ -617,6 +835,34 @@ export const uploadProductImage = async (file: File): Promise<string | null> => 
         if (error.message) {
             console.error('Upload error details:', error.message);
         }
+        return null;
+    }
+};
+
+export const uploadProductVideo = async (file: File): Promise<string | null> => {
+    if (IS_MOCK_MODE) {
+        console.warn('Cannot upload videos in mock mode');
+        return null;
+    }
+
+    try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+        const filePath = `videos/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('products')
+            .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage
+            .from('products')
+            .getPublicUrl(filePath);
+
+        return data.publicUrl;
+    } catch (error: any) {
+        console.error('Error uploading video:', error);
         return null;
     }
 };

@@ -84,16 +84,16 @@ const SizeGuide = () => {
                                         </li>
                                         <li className="flex gap-4">
                                             <span className="text-navy font-bold">03.</span>
-                                            <span>Nossas peças possuem margens de costura internas que permitem pequenos ajustes por um alfaiate.</span>
+                                            <span>Nossas peças possuem margens de costura internas que permitem pequenos ajustes por um costureiro.</span>
                                         </li>
                                     </ul>
                                 </div>
                                 <div>
-                                    <h4 className="text-[10px] tracking-[0.2em] uppercase font-bold text-navy mb-4">Facilidades Maison</h4>
+                                    <h4 className="text-[10px] tracking-[0.2em] uppercase font-bold text-navy mb-4">Facilidades</h4>
                                     <ul className="space-y-4 text-gray-600 font-light text-sm">
                                         <li className="flex gap-4">
                                             <span className="text-navy font-bold font-serif italic">Troca Facilitada:</span>
-                                            <span>A primeira troca é por nossa conta e pode ser solicitada em até 30 dias.</span>
+                                            <span>A primeira troca é por nossa conta e pode ser solicitada em até 7 dias.</span>
                                         </li>
                                         <li className="flex gap-4">
                                             <span className="text-navy font-bold font-serif italic">Atendimento VIP:</span>

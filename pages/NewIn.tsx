@@ -14,7 +14,7 @@ const NewIn = () => {
                 <header className="mb-20 text-center">
                     <h1 className="text-5xl font-serif text-navy mb-6 italic">Novidades</h1>
                     <p className="text-gray-400 font-light max-w-2xl mx-auto uppercase tracking-[0.2em] text-xs">
-                        As últimas criações da Maison Mendonça Dreams.
+                        As últimas criações da Mendonça Dreams.
                     </p>
                 </header>
 

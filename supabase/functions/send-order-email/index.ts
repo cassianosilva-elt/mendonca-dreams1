@@ -1,5 +1,7 @@
 /// <reference lib="deno.ns" />
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+
+// Note: In Supabase Edge Functions, several globals like Deno, fetch, and Request are available by default.
+// The imports from deno.land are used for specific standard library utilities.
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 
@@ -8,7 +10,8 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+// @ts-ignore: Deno namespace is defined in deno.d.ts
+Deno.serve(async (req: Request) => {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
@@ -127,7 +130,7 @@ serve(async (req) => {
 
             <div class="footer">
                 <p>&copy; ${new Date().getFullYear()} Mendonça Dreams. Todos os direitos reservados.</p>
-                <p>Maison de Alta Alfaiataria Feminina</p>
+                <p>Moda Feminina</p>
             </div>
         </div>
     </body>

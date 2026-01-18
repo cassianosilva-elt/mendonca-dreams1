@@ -11,6 +11,7 @@ export interface Product {
   composition: string;
   sizes: string[];
   colors: { name: string; hex: string }[];
+  videoUrl?: string;
 }
 
 export interface Review {
@@ -78,6 +79,7 @@ export interface Order {
   userId: string;
   userName?: string;
   userEmail?: string;
+  userPhone?: string;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   total: number;
   shippingAddress: {
@@ -115,6 +117,7 @@ export interface ProductFormData {
   composition: string;
   sizes: string[];
   colors: { name: string; hex: string }[];
+  videoUrl?: string;
   inventory?: {
     colorName: string;
     size: string;
