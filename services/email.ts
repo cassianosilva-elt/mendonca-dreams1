@@ -1,17 +1,13 @@
 import { Order } from '../types';
-import { supabase } from './supabase';
 
+// Email sending is a placeholder - can be implemented via Convex Actions later
 export const sendOrderConfirmationEmail = async (order: Order) => {
     try {
-        const { data, error } = await supabase.functions.invoke('send-order-email', {
-            body: { order }
-        });
-
-        if (error) throw error;
-
-        return { success: true, data };
+        // TODO: Implement email sending via Convex Actions or a third-party service
+        console.log('Order confirmation email would be sent for order:', order.id);
+        return { success: true, data: null };
     } catch (error: any) {
-        console.error('Error calling email function:', error);
+        console.error('Error sending email:', error);
         return { success: false, error: error.message };
     }
 };

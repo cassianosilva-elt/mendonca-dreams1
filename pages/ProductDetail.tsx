@@ -8,8 +8,12 @@ import ProductCard from '../components/ProductCard';
 import SEO from '../components/SEO';
 import OptimizedImage from '../components/OptimizedImage';
 import { useWishlist } from '../context/WishlistContext';
-import { getProductInventory } from '../services/supabase';
 import { ProductInventory } from '../types';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '../convex/_generated/api';
+
+const convexUrl = import.meta.env.VITE_CONVEX_URL;
+const convexClient = convexUrl ? new ConvexHttpClient(convexUrl) : null;
 
 const ProductDetail: React.FC = () => {
   const { slug } = useParams();
@@ -31,9 +35,19 @@ const ProductDetail: React.FC = () => {
       window.scrollTo(0, 0);
 
       const fetchInventory = async () => {
+        if (!convexClient) return;
         try {
-          const data = await getProductInventory(product.id);
-          setInventory(data as any);
+          const data = await convexClient.query(api.inventory.getByProductId, { productId: product.id as any });
+          const mapped = (data || []).map((item: any) => ({
+            id: item._id,
+            productId: item.productId,
+            productName: product.name,
+            colorName: item.colorName,
+            size: item.size,
+            quantity: item.quantity,
+            updatedAt: item._creationTime ? new Date(item._creationTime).toISOString() : '',
+          }));
+          setInventory(mapped);
         } catch (error) {
           console.error('Error fetching inventory:', error);
         }

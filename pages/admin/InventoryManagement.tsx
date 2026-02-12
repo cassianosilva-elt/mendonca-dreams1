@@ -3,7 +3,7 @@ import { Search, Save, ChevronDown, ChevronRight, Package, Loader2, Edit3, Check
 import AdminLayout from '../../components/admin/AdminLayout';
 import { getInventory, saveInventoryItem, getProducts } from '../../services/admin';
 import { ProductInventory, Product } from '../../types';
-import { IS_MOCK_MODE } from '../../services/supabase';
+import { IS_MOCK_MODE } from '../../services/admin';
 
 const InventoryRow: React.FC<{
     productName: string;

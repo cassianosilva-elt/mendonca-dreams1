@@ -4,7 +4,7 @@ import AdminLayout from '../../components/admin/AdminLayout';
 import DataTable from '../../components/admin/DataTable';
 import { getOrders, updateOrderStatus, deleteOrder } from '../../services/admin';
 import { Order } from '../../types';
-import { IS_MOCK_MODE } from '../../services/supabase';
+import { IS_MOCK_MODE } from '../../services/admin';
 
 const statusLabels: Record<Order['status'], string> = {
     pending: 'Aguardando Pagamento',

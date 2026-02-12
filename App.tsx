@@ -1,7 +1,11 @@
 
 import React from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { ClerkProvider, SignedIn, SignedOut, useUser, useAuth as useClerkAuth } from '@clerk/clerk-react';
+import { ptBR } from '@clerk/localizations';
+import { ConvexProviderWithClerk } from 'convex/react-clerk';
+import { ConvexReactClient } from 'convex/react';
 import { CartProvider } from './context/CartContext';
 import { ProductProvider } from './context/ProductContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -28,7 +32,6 @@ import Shipping from './pages/Shipping';
 import SizeGuide from './pages/SizeGuide';
 import Privacy from './pages/Privacy';
 import Gifts from './pages/Gifts';
-import EmailConfirmed from './pages/EmailConfirmed';
 import Terms from './pages/Terms';
 
 // Admin Pages
@@ -39,7 +42,13 @@ import AdminInventoryManagement from './pages/admin/InventoryManagement';
 import AdminUserManagement from './pages/admin/UserManagement';
 import AdminOrderManagement from './pages/admin/OrderManagement';
 
-// Use React.FC with optional children to resolve "children is missing in type {}" error
+// Initialize Convex client
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+
+// Clerk publishable key
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
+
+// Protected Route
 const ProtectedRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -69,9 +78,8 @@ const AdminRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           </div>
           <h2 className="text-2xl font-serif text-navy mb-4">Acesso Restrito</h2>
           <p className="text-gray-500 text-sm mb-8 leading-relaxed">
-            Esta área é exclusiva para administradores da Maison Mendonça Dreams. Se você acredita que deveria ter acesso, entre em contato com o suporte técnico.
+            Esta área é exclusiva para administradores da Mendonça Dreams. Se você acredita que deveria ter acesso, entre em contato com o suporte técnico.
           </p>
-          <Navigate to="/" replace /> {/* We still redirect, but ideally this would show for a few seconds or be a real page. For now, let's keep it simple but informative if they hit the URL directly. Actually, the Navigate will trigger immediately. Let's use a Link instead. */}
           <Link
             to="/"
             className="inline-block bg-navy text-white px-8 py-4 text-[11px] tracking-[0.3em] font-bold uppercase hover:bg-navy/90 transition-all w-full"
@@ -86,67 +94,81 @@ const AdminRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   return <>{children}</>;
 };
 
-function App() {
+function AppContent() {
   return (
-    <Router>
-      <HelmetProvider>
-        <ProductProvider>
-          <AuthProvider>
-            <WishlistProvider>
-              <CartProvider>
-                <Routes>
-                  {/* Admin Routes - No Navbar/Footer */}
-                  <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-                  <Route path="/admin/produtos" element={<AdminRoute><AdminProductManagement /></AdminRoute>} />
-                  <Route path="/admin/produtos/novo" element={<AdminRoute><AdminProductForm /></AdminRoute>} />
-                  <Route path="/admin/produtos/:id/editar" element={<AdminRoute><AdminProductForm /></AdminRoute>} />
-                  <Route path="/admin/estoque" element={<AdminRoute><AdminInventoryManagement /></AdminRoute>} />
-                  <Route path="/admin/usuarios" element={<AdminRoute><AdminUserManagement /></AdminRoute>} />
-                  <Route path="/admin/pedidos" element={<AdminRoute><AdminOrderManagement /></AdminRoute>} />
+    <Routes>
+      {/* Admin Routes - No Navbar/Footer */}
+      <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+      <Route path="/admin/produtos" element={<AdminRoute><AdminProductManagement /></AdminRoute>} />
+      <Route path="/admin/produtos/novo" element={<AdminRoute><AdminProductForm /></AdminRoute>} />
+      <Route path="/admin/produtos/:id/editar" element={<AdminRoute><AdminProductForm /></AdminRoute>} />
+      <Route path="/admin/estoque" element={<AdminRoute><AdminInventoryManagement /></AdminRoute>} />
+      <Route path="/admin/usuarios" element={<AdminRoute><AdminUserManagement /></AdminRoute>} />
+      <Route path="/admin/pedidos" element={<AdminRoute><AdminOrderManagement /></AdminRoute>} />
 
-                  {/* Public Routes - With Navbar/Footer */}
-                  <Route path="/*" element={
-                    <div className="min-h-screen bg-white selection:bg-navy selection:text-white flex flex-col overflow-x-hidden">
-                      <Navbar />
-                      <main className="flex-1 w-full relative">
-                        <Routes>
-                          <Route path="/" element={<Home />} />
-                          <Route path="/colecoes" element={<Collections />} />
-                          <Route path="/categoria/:category" element={<Collections />} />
-                          <Route path="/produto/:slug" element={<ProductDetail />} />
-                          <Route path="/carrinho" element={<Cart />} />
-                          <Route path="/login" element={<Login />} />
-                          <Route path="/cadastro" element={<Login />} />
-                          <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-                          <Route path="/conta" element={<ProtectedRoute><Account /></ProtectedRoute>} />
-                          <Route path="/sobre" element={<About />} />
-                          <Route path="/contato" element={<Contact />} />
-                          <Route path="/novidades" element={<NewIn />} />
-                          <Route path="/mais-vendidos" element={<BestSellers />} />
-                          <Route path="/sustentabilidade" element={<Sustainability />} />
-                          <Route path="/envios-e-devolucoes" element={<Shipping />} />
-                          <Route path="/guia-de-medidas" element={<SizeGuide />} />
-                          <Route path="/presentes" element={<Gifts />} />
-                          <Route path="/privacidade" element={<Privacy />} />
-                          <Route path="/termos" element={<Terms />} />
-                          <Route path="/confirmado" element={<EmailConfirmed />} />
-                          <Route path="*" element={<Navigate to="/" replace />} />
-                        </Routes>
-                      </main>
-                      <Footer />
-                      <AIStylist />
-                    </div>
-                  } />
-                </Routes>
-              </CartProvider>
-            </WishlistProvider>
-          </AuthProvider>
-        </ProductProvider>
-      </HelmetProvider>
-    </Router>
+      {/* Public Routes - With Navbar/Footer */}
+      <Route path="/*" element={
+        <div className="min-h-screen bg-white selection:bg-navy selection:text-white flex flex-col overflow-x-hidden">
+          <Navbar />
+          <main className="flex-1 w-full relative">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/colecoes" element={<Collections />} />
+              <Route path="/categoria/:category" element={<Collections />} />
+              <Route path="/produto/:slug" element={<ProductDetail />} />
+              <Route path="/carrinho" element={<Cart />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/cadastro" element={<Login />} />
+              <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+              <Route path="/conta" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+              <Route path="/sobre" element={<About />} />
+              <Route path="/contato" element={<Contact />} />
+              <Route path="/novidades" element={<NewIn />} />
+              <Route path="/mais-vendidos" element={<BestSellers />} />
+              <Route path="/sustentabilidade" element={<Sustainability />} />
+              <Route path="/envios-e-devolucoes" element={<Shipping />} />
+              <Route path="/guia-de-medidas" element={<SizeGuide />} />
+              <Route path="/presentes" element={<Gifts />} />
+              <Route path="/privacidade" element={<Privacy />} />
+              <Route path="/termos" element={<Terms />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+          <Footer />
+          <AIStylist />
+        </div>
+      } />
+    </Routes>
   );
 }
 
-// End of file
-export default App;
+function App() {
+  return (
+    <ClerkProvider
+      publishableKey={clerkPubKey}
+      localization={ptBR}
+      signInUrl="/login"
+      signUpUrl="/cadastro"
+      afterSignInUrl="/conta"
+      afterSignUpUrl="/conta"
+    >
+      <ConvexProviderWithClerk client={convex} useAuth={useClerkAuth}>
+        <Router>
+          <HelmetProvider>
+            <ProductProvider>
+              <AuthProvider>
+                <WishlistProvider>
+                  <CartProvider>
+                    <AppContent />
+                  </CartProvider>
+                </WishlistProvider>
+              </AuthProvider>
+            </ProductProvider>
+          </HelmetProvider>
+        </Router>
+      </ConvexProviderWithClerk>
+    </ClerkProvider>
+  );
+}
 
+export default App;

@@ -6,7 +6,7 @@ import { getProducts, createProduct, updateProduct, uploadProductImage, uploadPr
 import { useProducts } from '../../context/ProductContext';
 import { Product, ProductFormData } from '../../types';
 import { CATEGORIES } from '../../constants';
-import { IS_MOCK_MODE } from '../../services/supabase';
+import { IS_MOCK_MODE } from '../../services/admin';
 
 const ProductForm: React.FC = () => {
     const navigate = useNavigate();

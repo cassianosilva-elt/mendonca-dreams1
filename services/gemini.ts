@@ -12,7 +12,7 @@ export const getStylingAdvice = async (userInput: string, chatHistory: { role: '
   const roleName = isMale ? 'consultor' : 'consultora';
   const welcomeText = isMale ? 'Bem-vindo' : 'Bem-vinda';
 
-  const systemInstruction = `Você é a Inteligência Artificial da Mendonça Dreams, uma Maison de alta alfaiataria feminina de luxo. 
+  const systemInstruction = `Você é a Inteligência Artificial da Mendonça Dreams, uma marca de moda feminina de luxo. 
     Sua missão é dar dicas de moda social e alfaiataria feminina de luxo. 
     Você deve se comportar como um ${roleName} de estilo pessoal, sendo extremamente sofisticado, educado e conhecedor de tecidos premium (como seda, lã fria, linho) e cortes clássicos.
     

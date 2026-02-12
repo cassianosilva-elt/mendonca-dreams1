@@ -5,7 +5,7 @@ import StatsCard from '../../components/admin/StatsCard';
 import DataTable from '../../components/admin/DataTable';
 import { getDashboardStats, DashboardStats } from '../../services/admin';
 import { Order, ProductInventory } from '../../types';
-import { IS_MOCK_MODE } from '../../services/supabase';
+import { IS_MOCK_MODE } from '../../services/admin';
 
 const statusLabels: Record<Order['status'], string> = {
     pending: 'Pendente',

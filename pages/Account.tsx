@@ -6,7 +6,11 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { User, UserPreferences, Order } from '../types';
 import { useGenderedLanguage } from '../hooks/useGenderedLanguage';
-import { getUserOrders } from '../services/supabase';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '../convex/_generated/api';
+
+const convexUrl = import.meta.env.VITE_CONVEX_URL;
+const convexClient = convexUrl ? new ConvexHttpClient(convexUrl) : null;
 
 const Account = () => {
   const { user, logout, updateProfile, isAdmin, isMockMode } = useAuth();
@@ -22,10 +26,30 @@ const Account = () => {
   useEffect(() => {
     if (user && activeTab === 'orders') {
       const fetchOrders = async () => {
+        if (!convexClient) return;
         setIsLoadingOrders(true);
         try {
-          const data = await getUserOrders(user.id);
-          setOrders(data as any);
+          const data = await convexClient.query(api.orders.getByUserId, { userId: user.id });
+          const mapped = data.map((order: any) => ({
+            id: order._id,
+            userId: order.userId,
+            userName: order.userName || 'Usuário',
+            userEmail: order.userEmail || '',
+            userPhone: order.userPhone || '',
+            status: order.status,
+            total: order.total,
+            shippingAddress: order.shippingAddress,
+            items: (order.items || []).map((item: any) => ({
+              productId: item.productId,
+              productName: item.productName,
+              quantity: item.quantity,
+              size: item.size,
+              color: item.color,
+              price: item.price,
+            })),
+            createdAt: order._creationTime ? new Date(order._creationTime).toISOString() : '',
+          }));
+          setOrders(mapped);
         } catch (error) {
           console.error('Error fetching orders:', error);
         } finally {
@@ -64,7 +88,7 @@ const Account = () => {
               </div>
               <div>
                 <p className="text-[10px] font-bold text-amber-800 uppercase tracking-widest">Modo de Demonstração Ativo</p>
-                <p className="text-xs text-amber-600 mt-1">Conexão com o banco de dados via Supabase não formatada. Dados são simulados.</p>
+                <p className="text-xs text-amber-600 mt-1">Conexão com o banco de dados não configurada. Dados são simulados.</p>
               </div>
             </div>
           </div>

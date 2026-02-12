@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CartItem, Product } from '../types';
 import { useAuth } from './AuthContext';
-import { supabase, IS_MOCK_MODE } from '../services/supabase';
 
 interface CartContextType {
   cart: CartItem[];
@@ -22,110 +21,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Sync with DB when user logs in
-  useEffect(() => {
-    if (!user || IS_MOCK_MODE) return;
-
-    const syncCart = async () => {
-      // 1. Get or Create Cart
-      let { data: cartData } = await supabase
-        .from('carts')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!cartData) {
-        const { data: newCart } = await supabase
-          .from('carts')
-          .insert({ user_id: user.id })
-          .select()
-          .single();
-        cartData = newCart;
-      }
-
-      if (cartData) {
-        // 2. Fetch Items
-        const { data: items } = await supabase
-          .from('cart_items')
-          .select('*, products(*)') // Join with products to get details
-          .eq('cart_id', cartData.id);
-
-        if (items) {
-          // Transform to CartItem type
-          const dbItems: CartItem[] = items.map((item: any) => ({
-            id: item.product_id,
-            slug: item.products.slug,
-            name: item.products.name,
-            price: item.products.price,
-            images: item.products.images, // Assuming products view returns array
-            category: item.products.category,
-            description: item.products.description,
-            details: item.products.details,
-            composition: item.products.composition,
-            sizes: item.products.sizes,
-            colors: item.products.colors,
-            selectedSize: item.size,
-            selectedColor: item.color,
-            quantity: item.quantity
-          }));
-
-          // Merge local cart with DB cart
-          if (dbItems.length > 0) {
-            setCart(dbItems);
-          } else if (cart.length > 0) {
-            // Push local items to DB
-            for (const item of cart) {
-              // First, check if the product exists in the database (avoid FK violation)
-              const { data: productExists } = await supabase
-                .from('products')
-                .select('id')
-                .eq('id', item.id)
-                .maybeSingle();
-
-              if (!productExists) {
-                // Product doesn't exist in DB (it's a generic/mock product), skip syncing this item
-                console.log('Skipping sync for cart item with non-DB product:', item.id);
-                continue;
-              }
-
-              const { data: existing } = await supabase
-                .from('cart_items')
-                .select('id')
-                .eq('cart_id', cartData.id)
-                .eq('product_id', item.id)
-                .eq('size', item.selectedSize)
-                .eq('color', item.selectedColor)
-                .maybeSingle();
-
-              if (!existing) {
-                const { error } = await supabase.from('cart_items').insert({
-                  cart_id: cartData.id,
-                  product_id: item.id,
-                  size: item.selectedSize,
-                  color: item.selectedColor,
-                  quantity: item.quantity
-                });
-                // Ignore unique violation if race condition occurs
-                if (error && error.code !== '23505') {
-                  console.error('Error syncing cart item:', error);
-                }
-              }
-            }
-          }
-        }
-      }
-    };
-
-    syncCart();
-  }, [user]);
-
   // Persist to LocalStorage always (offline support)
   useEffect(() => {
     localStorage.setItem('md_cart', JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = async (product: Product, size: string, color: string) => {
-    // Optimistic UI Update
+  const addToCart = (product: Product, size: string, color: string) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id && item.selectedSize === size);
       if (existing) {
@@ -137,90 +38,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return [...prev, { ...product, quantity: 1, selectedSize: size, selectedColor: color }];
     });
-
-    if (user && !IS_MOCK_MODE) {
-      // Check if product exists in DB first (avoid FK violation with generic products)
-      const { data: productExists } = await supabase
-        .from('products')
-        .select('id')
-        .eq('id', product.id)
-        .maybeSingle();
-
-      if (!productExists) {
-        // Product is not in DB (generic/mock product), skip DB sync
-        console.log('Skipping DB sync for non-DB product:', product.id);
-        return;
-      }
-
-      // Sync to DB
-      const { data: cartData } = await supabase.from('carts').select('id').eq('user_id', user.id).single();
-      if (cartData) {
-        const { data: existingItem } = await supabase
-          .from('cart_items')
-          .select('*')
-          .eq('cart_id', cartData.id)
-          .eq('product_id', product.id)
-          .eq('size', size)
-          .eq('color', color)
-          .maybeSingle();
-
-        if (existingItem) {
-          await supabase.from('cart_items').update({ quantity: existingItem.quantity + 1 }).eq('id', existingItem.id);
-        } else {
-          // Try to insert. If race condition causes 409, we swallow it since item exists.
-          const { error } = await supabase.from('cart_items').insert({
-            cart_id: cartData.id,
-            product_id: product.id,
-            size: size,
-            color: color,
-            quantity: 1
-          });
-
-          if (error && error.code !== '23505') { // Ignore unique_violation, log others
-            console.error('Error adding to cart:', error);
-          }
-        }
-      }
-    }
   };
 
-  const removeFromCart = async (id: string, size: string) => {
+  const removeFromCart = (id: string, size: string) => {
     setCart(prev => prev.filter(item => !(item.id === id && item.selectedSize === size)));
-
-    if (user && !IS_MOCK_MODE) {
-      const { data: cartData } = await supabase.from('carts').select('id').eq('user_id', user.id).single();
-      if (cartData) {
-        await supabase.from('cart_items')
-          .delete()
-          .eq('cart_id', cartData.id)
-          .eq('product_id', id)
-          .eq('size', size);
-      }
-    }
   };
 
-  const updateQuantity = async (id: string, size: string, delta: number) => {
+  const updateQuantity = (id: string, size: string, delta: number) => {
     setCart(prev => prev.map(item =>
       (item.id === id && item.selectedSize === size)
         ? { ...item, quantity: Math.max(1, item.quantity + delta) }
         : item
     ));
-
-    if (user && !IS_MOCK_MODE) {
-      const { data: cartData } = await supabase.from('carts').select('id').eq('user_id', user.id).single();
-      if (cartData) {
-        // Need current qty to solve math
-        const item = cart.find(i => i.id === id && i.selectedSize === size);
-        if (item) {
-          const newQty = Math.max(1, item.quantity + delta);
-          await supabase.from('cart_items')
-            .update({ quantity: newQty })
-            .eq('cart_id', cartData.id)
-            .eq('product_id', id)
-            .eq('size', size);
-        }
-      }
-    }
   };
 
   const clearCart = () => setCart([]);

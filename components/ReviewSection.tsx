@@ -3,8 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Star, MessageSquare, Send } from 'lucide-react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getProductReviews, addReview } from '../services/supabase';
 import { useProducts } from '../context/ProductContext';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '../convex/_generated/api';
+
+const convexUrl = import.meta.env.VITE_CONVEX_URL;
+const client = convexUrl ? new ConvexHttpClient(convexUrl) : null;
 
 const ReviewSection: React.FC = () => {
   const { slug } = useParams();
@@ -22,10 +26,10 @@ const ReviewSection: React.FC = () => {
   const [hoverRating, setHoverRating] = useState(0);
 
   const fetchReviews = async () => {
-    if (!product) return;
+    if (!product || !client) return;
     setIsLoading(true);
     try {
-      const data = await getProductReviews(product.id);
+      const data = await client.query(api.reviews.getByProductId, { productId: product.id as any });
       setReviews(data || []);
     } catch (error) {
       console.error('Error fetching reviews:', error);
@@ -40,14 +44,14 @@ const ReviewSection: React.FC = () => {
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !product || !comment.trim()) return;
+    if (!user || !product || !comment.trim() || !client) return;
 
     setIsSubmitting(true);
     try {
-      await addReview({
-        product_id: product.id,
-        user_id: user.id,
-        user_name: user.name,
+      await client.mutation(api.reviews.add, {
+        productId: product.id as any,
+        userId: user.id,
+        userName: user.name,
         rating,
         comment: comment.trim()
       });

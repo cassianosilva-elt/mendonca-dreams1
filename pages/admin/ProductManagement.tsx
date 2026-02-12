@@ -8,7 +8,7 @@ import { getProducts, deleteProduct, importGenericProducts } from '../../service
 import { useProducts } from '../../context/ProductContext';
 import { Product, ProductFormData } from '../../types';
 import { CATEGORIES } from '../../constants';
-import { IS_MOCK_MODE } from '../../services/supabase';
+import { IS_MOCK_MODE } from '../../services/admin';
 
 const ProductManagement: React.FC = () => {
     const navigate = useNavigate();

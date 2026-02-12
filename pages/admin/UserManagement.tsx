@@ -5,7 +5,7 @@ import DataTable from '../../components/admin/DataTable';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import { getUsers, toggleUserAdmin } from '../../services/admin';
 import { User } from '../../types';
-import { IS_MOCK_MODE } from '../../services/supabase';
+import { IS_MOCK_MODE } from '../../services/admin';
 import { useAuth } from '../../context/AuthContext';
 
 
