@@ -211,10 +211,6 @@ export const deleteProduct = async (id: string): Promise<{ success: boolean; err
     if (IS_MOCK_MODE) return { success: false, error: 'Não é possível excluir em modo demonstração.' };
 
     try {
-        // Check if it's a generic product (not a Convex ID)
-        if (!id.includes('_')) {
-            return { success: false, error: 'Produto genérico não pode ser excluído do banco.' };
-        }
 
         await client!.mutation(api.products.remove, { id: id as Id<"products"> });
         return { success: true };

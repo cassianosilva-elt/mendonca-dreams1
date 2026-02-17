@@ -37,12 +37,8 @@ const ProductDetail: React.FC = () => {
       const fetchInventory = async () => {
         if (!convexClient || !product.id) return;
 
-        // Only fetch inventory if the ID looks like a Convex ID (contains an underscore)
-        // Static UUIDs from constants.ts will fail the server-side validator
-        if (!product.id.includes('_')) {
-          console.warn('Skipping inventory fetch for generic product ID:', product.id);
-          return;
-        }
+        // Fetch inventory for all products
+        // Generic products in constants.ts can also have inventory mapped in Convex
 
         try {
           const data = await convexClient.query(api.inventory.getByProductId, { productId: product.id as any });
@@ -64,8 +60,22 @@ const ProductDetail: React.FC = () => {
     }
   }, [product, slug]);
 
+  // Handle auto-updating size when color changes if the current size is unavailable
+  useEffect(() => {
+    if (product && selectedColor && inventory.length > 0) {
+      const isCurrentlySelectedInStock = checkStock(selectedSize, selectedColor);
+      if (!isCurrentlySelectedInStock) {
+        // Find first available size for this color
+        const firstAvailable = product.sizes.find(size => checkStock(size, selectedColor));
+        if (firstAvailable) {
+          setSelectedSize(firstAvailable);
+        }
+      }
+    }
+  }, [selectedColor, inventory]);
+
   const checkStock = (size: string, color: string) => {
-    if (inventory.length === 0) return true; // Assume in stock if inventory not loaded or in mock mode
+    if (inventory.length === 0) return true; // Fallback to true if inventory hasn't been fetched yet
     const item = inventory.find(i => i.size === size && i.colorName === color);
     return item ? item.quantity > 0 : false;
   };

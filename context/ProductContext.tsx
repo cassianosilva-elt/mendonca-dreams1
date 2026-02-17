@@ -25,9 +25,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const fetchInitial = async () => {
             try {
                 const data = await getProducts();
-                // We only care about products actually in the DB (with Convex IDs)
-                // Filter out generic products that getProducts() also returns
-                const dbOnly = data.filter(p => p.id.includes('_'));
+                const dbOnly = data;
                 setManualProducts(dbOnly);
             } catch (error) {
                 console.error('Error in resilient fetch:', error);
