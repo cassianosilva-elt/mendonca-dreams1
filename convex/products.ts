@@ -4,17 +4,39 @@ import { v } from "convex/values";
 export const list = query({
     args: {},
     handler: async (ctx) => {
-        return await ctx.db.query("products").order("desc").collect();
+        const products = await ctx.db.query("products").order("desc").collect();
+        return await Promise.all(
+            products.map(async (product) => {
+                const imageUrls = await Promise.all(
+                    product.images.map(async (img) => {
+                        if (img.startsWith("http")) return img;
+                        const url = await ctx.storage.getUrl(img);
+                        return url || img;
+                    })
+                );
+                return { ...product, images: imageUrls };
+            })
+        );
     },
 });
 
 export const getBySlug = query({
     args: { slug: v.string() },
     handler: async (ctx, { slug }) => {
-        return await ctx.db
+        const product = await ctx.db
             .query("products")
             .withIndex("by_slug", (q) => q.eq("slug", slug))
             .unique();
+        if (!product) return null;
+
+        const imageUrls = await Promise.all(
+            product.images.map(async (img) => {
+                if (img.startsWith("http")) return img;
+                const url = await ctx.storage.getUrl(img);
+                return url || img;
+            })
+        );
+        return { ...product, images: imageUrls };
     },
 });
 

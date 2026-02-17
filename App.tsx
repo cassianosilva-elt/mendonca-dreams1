@@ -117,8 +117,8 @@ function AppContent() {
               <Route path="/categoria/:category" element={<Collections />} />
               <Route path="/produto/:slug" element={<ProductDetail />} />
               <Route path="/carrinho" element={<Cart />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/cadastro" element={<Login />} />
+              <Route path="/login/*" element={<Login />} />
+              <Route path="/cadastro/*" element={<Login />} />
               <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
               <Route path="/conta" element={<ProtectedRoute><Account /></ProtectedRoute>} />
               <Route path="/sobre" element={<About />} />
@@ -149,8 +149,8 @@ function App() {
       localization={ptBR}
       signInUrl="/login"
       signUpUrl="/cadastro"
-      afterSignInUrl="/conta"
-      afterSignUpUrl="/conta"
+      signInFallbackRedirectUrl="/conta"
+      signUpFallbackRedirectUrl="/conta"
     >
       <ConvexProviderWithClerk client={convex} useAuth={useClerkAuth}>
         <Router>

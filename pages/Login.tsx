@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 
 const Login: React.FC = () => {
   const location = useLocation();
-  const isSignUpPage = location.pathname === '/cadastro';
+  const isSignUpPage = location.pathname.startsWith('/cadastro');
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -39,7 +39,7 @@ const Login: React.FC = () => {
                 routing="path"
                 path="/cadastro"
                 signInUrl="/login"
-                afterSignUpUrl="/conta"
+                fallbackRedirectUrl="/conta"
                 appearance={{
                   elements: {
                     rootBox: 'w-full',
@@ -64,7 +64,7 @@ const Login: React.FC = () => {
                 routing="path"
                 path="/login"
                 signUpUrl="/cadastro"
-                afterSignInUrl="/conta"
+                fallbackRedirectUrl="/conta"
                 appearance={{
                   elements: {
                     rootBox: 'w-full',

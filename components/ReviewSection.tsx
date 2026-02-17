@@ -27,6 +27,13 @@ const ReviewSection: React.FC = () => {
 
   const fetchReviews = async () => {
     if (!product || !client) return;
+
+    // Only fetch reviews if the product ID is a valid Convex ID
+    if (!product.id.includes('_')) {
+      setReviews([]);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const data = await client.query(api.reviews.getByProductId, { productId: product.id as any });
@@ -45,6 +52,11 @@ const ReviewSection: React.FC = () => {
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !product || !comment.trim() || !client) return;
+
+    if (!product.id.includes('_')) {
+      alert('Este produto ainda não está disponível para avaliações.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {

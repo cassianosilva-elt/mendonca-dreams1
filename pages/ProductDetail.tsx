@@ -35,7 +35,15 @@ const ProductDetail: React.FC = () => {
       window.scrollTo(0, 0);
 
       const fetchInventory = async () => {
-        if (!convexClient) return;
+        if (!convexClient || !product.id) return;
+
+        // Only fetch inventory if the ID looks like a Convex ID (contains an underscore)
+        // Static UUIDs from constants.ts will fail the server-side validator
+        if (!product.id.includes('_')) {
+          console.warn('Skipping inventory fetch for generic product ID:', product.id);
+          return;
+        }
+
         try {
           const data = await convexClient.query(api.inventory.getByProductId, { productId: product.id as any });
           const mapped = (data || []).map((item: any) => ({

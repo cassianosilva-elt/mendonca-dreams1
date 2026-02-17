@@ -468,32 +468,37 @@ export const uploadProductImage = async (file: File): Promise<string | null> => 
     if (IS_MOCK_MODE) return null;
 
     try {
-        // Get upload URL from Convex
-        const uploadUrl = await client!.mutation(api.files.generateUploadUrl, {});
+        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dmsfgqxx6';
+        const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'mendonca_presets';
 
-        // Upload the file
-        const response = await fetch(uploadUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': file.type },
-            body: file,
-        });
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', uploadPreset);
 
-        if (!response.ok) throw new Error('Upload failed');
+        // Upload to Cloudinary using a direct fetch call (browser-compatible)
+        const response = await fetch(
+            `https://api.cloudinary.com/v1_1/${cloudName}/${file.type.startsWith('video') ? 'video' : 'image'}/upload`,
+            {
+                method: 'POST',
+                body: formData,
+            }
+        );
 
-        const { storageId } = await response.json();
+        if (!response.ok) {
+            const error = await response.json();
+            console.error('Cloudinary upload error:', error);
+            throw new Error('Cloudinary upload failed');
+        }
 
-        // Get the URL for the stored file
-        // For Convex storage, we construct the URL from the deployment URL
-        const convexSiteUrl = import.meta.env.VITE_CONVEX_URL?.replace('.cloud', '.site');
-        return `${convexSiteUrl}/getFile?storageId=${storageId}`;
+        const data = await response.json();
+        return data.secure_url;
     } catch (error: any) {
-        console.error('Error uploading image:', error);
+        console.error('Error uploading to Cloudinary:', error);
         return null;
     }
 };
 
 export const uploadProductVideo = async (file: File): Promise<string | null> => {
-    // Same as image upload - Convex storage handles all file types
     return uploadProductImage(file);
 };
 

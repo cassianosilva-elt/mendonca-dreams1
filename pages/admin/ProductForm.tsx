@@ -5,7 +5,7 @@ import AdminLayout from '../../components/admin/AdminLayout';
 import { getProducts, createProduct, updateProduct, uploadProductImage, uploadProductVideo } from '../../services/admin';
 import { useProducts } from '../../context/ProductContext';
 import { Product, ProductFormData } from '../../types';
-import { CATEGORIES } from '../../constants';
+import { CATEGORIES, PRODUCTS } from '../../constants';
 import { IS_MOCK_MODE } from '../../services/admin';
 
 const ProductForm: React.FC = () => {
@@ -225,14 +225,16 @@ const ProductForm: React.FC = () => {
 
         let success: boolean;
         if (isEditing && id) {
-            // Check if id is a UUID (contains a dash). Generic IDs are '1', '2', etc.
-            const isUuid = id.includes('-');
-            if (isUuid) {
-                success = await updateProduct(id, dataToSave);
-            } else {
+            // Check if this is a generic product from constants.ts
+            const isGenericProduct = PRODUCTS.some(p => p.id === id);
+
+            if (isGenericProduct) {
                 // If it's a generic product not yet in DB, create it
                 const newProduct = await createProduct(dataToSave);
                 success = newProduct !== null;
+            } else {
+                // It's a real database product (or at least not in constants)
+                success = await updateProduct(id, dataToSave);
             }
         } else {
             const newProduct = await createProduct(dataToSave);
