@@ -15,6 +15,7 @@ const Home: React.FC = () => {
       <SEO
         title="Mendonça Dreams | Alta Alfaiataria"
         description="Descubra a coleção exclusiva de alta alfaiataria feminina. Peças que unem luxo, conforto e design atemporal."
+        keywords="Mendonça Dreams, moda feminina social, alta alfaiataria feminina, vestidos de luxo, roupas de gala feminina"
       />
       <Hero />
 

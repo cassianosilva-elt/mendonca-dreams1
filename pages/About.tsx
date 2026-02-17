@@ -26,7 +26,7 @@ const About = () => {
           <div className="space-y-10">
             <h2 className="text-4xl font-serif text-navy leading-tight">Estilo que <span className="italic">Empodera</span>.</h2>
             <p className="text-gray-500 leading-relaxed font-light text-lg">
-              creditamos que a roupa certa transforma o dia. Por isso, trazemos o que há de melhor na moda feminina: peças versáteis, com detalhes nobres e caimento superior. Uma coleção pensada para elevar sua imagem pessoal com praticidade e muita sofisticação.
+              Acreditamos que a roupa certa transforma o dia. Por isso, trazemos o que há de melhor na moda feminina: peças versáteis, com detalhes nobres e caimento superior. Uma coleção pensada para elevar sua imagem pessoal com praticidade e muita sofisticação.
             </p>
             <div className="border-l-2 border-navy/10 pl-8 space-y-6 italic text-navy/60">
               <p>"Não vendemos roupas. Vendemos a confiança inabalável que surge quando você sabe que está impecável."</p>
